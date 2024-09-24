@@ -5,12 +5,20 @@ date: "2023-05-27"
 output: html_document
 ---
 # Field data
+
+## Frequency of infection and hemiptera
+look at prevalence vs presence more? 
+
 ```{r}
 library(tidyverse)
 library(cowplot)
 library(patchwork)
+library(car)
+library(GLMMadaptive)
+library(pscl)
 
 trillium<-read.csv("Trillium_Field_Data_Frequency.csv")#just 2023
+trillium<-trillium %>% mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
 trilliumY<-read.csv("Trillium_Field_Data - Multiyear.csv")#includes 2018 and 2023
 trilliumY
 trilliumY$Year<-as.factor(trilliumY$Year)
@@ -32,16 +40,45 @@ trillium_long
 ```
 
 ```{r}
-hist(log(trilliumY$Freq_infection_of_adults))
+hist(log(trilliumY$Freq_infection_of_adults+1))
+hist(trilliumY$Freq_infection_of_adults)
 hist(trilliumY$Freq_hemiptera_total)
 hist(trilliumY$Total_trilliums)
-summary(lm(log(Freq_infection_of_adults+1)~Freq_hemiptera_adults*Total_adult_trilliums, data=trillium))#only gets at 2023 data, sig hemiptera and interaction
-plot(lm(log(Freq_infection_of_adults+1)~Freq_hemiptera_adults*Total_adult_trilliums, data=trilliumY))
+```
+Zero-inflated poisson models
+```{r}
+#2018 and 2023
+##with random effects
+head(trilliumY)
+str(trilliumY)
+MM4<-mixed_model(Total_infec_trilliums~Total_adult_trilliums+Year, random = ~ 1 | Population, data = trilliumY, family = zi.poisson(), zi_fixed = ~ Total_adult_trilliums+Year, zi_random=~1 |Population,control=list(iter_EM = 0))
+summary(MM4) #loglik -254.7688. count model: density p=0.069. zero model:	 higher density increases likelihood of finding 0s p=0.01, higher year decreases chance of finding 0s=0.0388
+##without random effects
+summary(zeroinfl(Total_infec_trilliums~Total_adult_trilliums+Year, data=trilliumY)) #loglik -272.1, basically same results as above
 
-summary(lm(log(Freq_infection_of_adults+1)~Total_adult_trilliums+Year, data=trilliumY)) #uses both years of data but can't include hemiptera, sig density and year
+#2023 only
+##with random effects
+head(trillium)
+MM2<-mixed_model(Total_infec_trilliums~Freq_hemiptera_adults+Total_adult_trilliums, random = ~ 1 | Population, data = trillium, family = zi.poisson(), zi_fixed = ~ Freq_hemiptera_adults+Total_adult_trilliums, zi_random=~1 |Population,control=list(iter_EM = 0))
+summary(MM2) #loglik -83.28, freq hemip 0.057 in count model 
+
+##without random effects
+summary(zeroinfl(Total_infec_trilliums~Freq_hemiptera_adults+Total_adult_trilliums, data=trillium)) #log lik -82.6, sig more likely to get zero infection in high adult density , marginal hemip in count model
+
+#correlations
+cor(trillium$Total_trilliums, trillium$Freq_hemiptera_total) #-0.475946
+cor(trillium$Freq_infection_of_adults, trillium$Freq_hemiptera_adults) #0.3341377
+cor(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
 ```
 
 ```{r}
+trillium %>% ggplot(aes(x=Total_trilliums, y=Total_infec_trilliums, color=Freq_hemiptera_adults))+geom_point()+theme_cowplot()+labs(x="Trillium (no.)", y="Symptomatic trillium (no.)")
+trillium %>% ggplot(aes(x=Total_adult_trilliums, y=Total_infec_trilliums, color=Freq_hemiptera_adults))+geom_point()+theme_cowplot()+labs(x="Flowering trillium (no.)", y="Symptomatic trillium (no.)")+scale_color_continuous("Freq. of hemiptera on flowering trillium",low = "blue", high = "hotpink")
+```
+```{r}
+trilliumY %>% 
+  ggplot(aes(x=Population, y=Freq_infection_of_adults, colour=Population))+geom_boxplot()+facet_wrap(~Forest_side)
+
 trilliumY %>% 
   ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults, colour=Forest_side))+geom_point()+geom_smooth(method='gam', se=F)+facet_wrap(~Year)
 
@@ -60,7 +97,6 @@ trilliumY %>% filter(Year=='2023') %>%
 trilliumY %>% 
   ggplot(aes(x=Total_trilliums, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm")
 ```
-
 
 ```{r}
 hist(trillium$Freq_hemiptera_adults)
@@ -87,7 +123,89 @@ trillium %>%
 trillium %>% 
   ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm")+theme_cowplot()+xlab("Infection frequency of adults")+ylab("Young:Reproductive ratio")
 ```
+Figure
+```{r}
+fig2A<-trilliumY %>% 
+  ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method='gam', se=F, color="yellowgreen")+facet_wrap(~Year)+theme_cowplot()+xlab("Density of flowering trillium in 1m^2")+ylab("Frequency of infected adults")
+fig2B<-trillium %>%
+  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+xlab("Frequency of hemiptera on flowering trillium")+ylab("Frequency of infected flowering trillium")+theme_cowplot()+ylim(0,0.23)
+fig2C<-trillium %>% 
+  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+theme_cowplot()+xlab("Density of all trilliums no./m^2")+ ylab("Frequency of hemiptera on all trilliums")
+fig2D<-trillium %>% 
+  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+theme_cowplot()+xlab("Infection frequency of flowering trillium")+ylab("Non-flowering:Flowering ratio")
 
+plot_grid(fig2A,fig2B,fig2C, fig2D, labels=c("A", "B", "C", "D")) #save 10x12
+plot_grid(fig2A,fig2B,fig2C, labels=c("A", "B", "C"), ncol=1)
+fig2Alabelled<-fig2A+plot_annotation(tag_levels = list(c("A")))
+fig2BC<-fig2B/fig2C+plot_annotation(tag_levels = list(c("B", "C")))+ plot_layout(ncol=1)
+plot_grid(fig2Alabelled,fig2BC, ncol=1)
+fig2Alabelled+fig2BC
+```
+
+
+## Trait data
+```{r}
+traits<-read.csv("Trillium_Field_Data - Leaf and Height Phenotypes.csv")
+str(traits)
+traits<-traits %>% mutate(Infection_chr=ifelse(Infection=="0", "Asymptomatic", "Symptomatic"))
+```
+```{r}
+#Height
+figheight<-traits %>% ggplot(aes(x=Infection_chr, y=Height_cm))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Height (cm)")
+traits %>% ggplot(aes(x=Infection, y=Height_cm))+geom_point()+geom_smooth()+theme_cowplot()
+traits %>%  group_by(Infection_chr) %>% summarize(mean=mean(Height_cm))
+1-(23.34688/27.61000	)
+27.61-23.34688
+
+#leaf length
+traits %>% ggplot(aes(x=Infection_chr, y=Leaf_length_cm))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Leaf length (cm)")
+
+#sepal length
+figsepal<-traits %>% ggplot(aes(x=Infection_chr, y=Sepal_length_cm))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Sepal length (cm)")
+traits %>%  group_by(Infection_chr) %>% summarize(mean=mean(Sepal_length_cm))
+1-(3.460667/4.820938)
+
+#leaf and sepal ratio
+figratio<-traits %>% ggplot(aes(x=Infection_chr, y=Sepal_to_leaf_ratio))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Sepal:Leaf length ratio")
+traits %>%  group_by(Infection_chr) %>% summarize(mean=mean(Sepal_to_leaf_ratio))
+
+#figure
+plot_grid(figheight,figsepal, figratio, labels=c("A", "B", "C"))
+```
+```{r}
+hist(traits$Height_cm)
+summary(lmer(Height_cm~Infection_chr+(1|Plot/Population), data=traits))
+Anova(lmer(Height_cm~Infection_chr+(1|Plot/Population), data=traits), type=3) #p=0.003096
+
+hist(traits$Leaf_length_cm)
+Anova(lmer(Leaf_length_cm~Infection_chr+(1|Plot/Population), data=traits), type=3) #not sig
+
+hist(log(traits$Sepal_length_cm))
+shapiro.test(log(traits$Sepal_length_cm))
+summary(lmer(log(Sepal_length_cm)~Infection_chr+(1|Plot/Population), data=traits))
+Anova(lmer(log(Sepal_length_cm)~Infection_chr+(1|Plot/Population), data=traits), type=3) #p=2.342e-07
+```
+
+
+## Sticky trap data
+```{r}
+sticky<-read.csv("Trillium_Field_Data - Sticky traps.csv")
+head(sticky)
+str(sticky)
+sticky$Adult_Trillium_density<-factor(sticky$Adult_Trillium_density, levels=c("Low", "Mid", "High"))
+sticky_noout<-sticky %>% filter(Outlier=="No")
+```
+
+```{r}
+sticky_noout %>% ggplot(aes(x=Adult_Trillium_density, y=Num_sapsuckers_on_trap))+geom_boxplot()
+sticky_noout %>% ggplot(aes(x=Adult_Trillium_density, y=Total_insects_on_trap))+geom_boxplot()
+sticky_noout %>% ggplot(aes(x=Forest, y=Num_sapsuckers_on_trap, fill=Adult_Trillium_density))+geom_boxplot()+theme_cowplot()+scale_fill_grey(name="Density of flowering trillium", start=0.5, end=1)+labs(x = "Forest population",y = "Hemiptera caught (no.)")+scale_x_discrete(labels=c("Old growth", "Secondary"))
+sticky_noout %>% ggplot(aes(x=Forest, y=Total_insects_on_trap, color=Adult_Trillium_density))+geom_boxplot()
+#this mainly shows that old forest had more bugs than secondary forest, and that intermediate trillium density plots tended to have the most insects
+
+sticky_noout %>% ggplot(aes(x=Num_sapsuckers_on_trap, y=Freq_infection_of_adults, color=Adult_Trillium_density))+geom_point()+theme_cowplot()
+sticky_noout %>% ggplot(aes(x=Num_sapsuckers_on_trap, y=Freq_hemiptera_total, color=Adult_Trillium_density))+geom_point()+theme_cowplot()
+```
 
 # iNaturalist data
 ```{r}
@@ -95,21 +213,56 @@ library(maps)
 library(mapdata)
 library(ggmap)
 library(RColorBrewer)
+library(raster)
+library(scales)
+library(CoordinateCleaner)
 #library(maptools)
-#library(rnaturalearth)
-#library(rnaturalearthdata)
+library(rnaturalearth)
+library(rnaturalearthdata)
+#library(geodata)
+library(sf)
+library(plyr)
+library(data.table)
+#library(tidyterra)
 #library(rnaturalearthhires)
 #library(raster)
-inatinfec<-read.csv("iNat_infectrilliums_2023_07_5.csv")
 inat<-read.csv("iNat_alltrilliums_2023_07_05.csv")
 head(inat)
+inat<-inat %>% mutate(country_code=ifelse(grepl("Canada", place_country_name), "CAN", "USA"))
+inat <- inat %>%
+  filter(!is.na(longitude)) %>%
+  filter(!is.na(latitude))
+
+inat_clean <- clean_coordinates(x = inat, 
+                           lon = "longitude", 
+                           lat = "latitude",
+                           countries = "country_code",
+                           species = "scientific_name",
+                           tests = c("centroids",
+                                    "equal", "zeros", "institutions", "duplicates")) 
+inat_clean=inat_clean %>% filter(.summary==TRUE) #only include observations that have no suspect issues
+
+set.seed(1)
+overrepresented_users<-inat_clean %>% group_by(user_login) %>% tally() %>% filter(n>15)
+overrepresented_samples<-subset(inat_clean, user_login %in% overrepresented_users$user_login)
+overrepresented_subset<-plyr::ddply(overrepresented_samples,.(user_login),function(x) x[sample(nrow(x),15),])#make the max number of observations per user 15 
+normalrepresented_users<-inat_clean %>% group_by(user_login) %>% tally() %>% filter(n<=15)
+normalrepresented_samples<-subset(inat_clean, user_login %in% normalrepresented_users$user_login)
+inat_clean_corrected<-rbind(overrepresented_subset,normalrepresented_samples)
+inat_clean_corrected
+inat_clean_corrected_tally<-inat_clean_corrected %>% group_by(user_login) %>% tally()
+mean(inat_clean_corrected_tally$n)
+median(inat_clean_corrected_tally$n)
+
+inatinfec<-inat_clean_corrected %>% filter( field.phytoplasma.infection.=="Yes") #make another dataset of infected points
+inatinfec %>% group_by(user_login) %>% tally() #no user contributed more than 6 infected observations
 
 #time series
-inat20s<-inat %>% filter(observed_on>2020-1-1, observed_on<2030-1-1)
-inat10s<-inat %>% filter(observed_on>2010-1-1, observed_on<2020-1-1)
-inat00s<-inat %>% filter(observed_on>2000-1-1, observed_on<2010-1-1)
-inat90s<-inat %>% filter(observed_on>1990-1-1, observed_on<2000-1-1)
-inat80sandbelow<-inat %>% filter(observed_on<1990-1-1)
+inat20s<-inat_clean_corrected %>% filter(observed_on>2020-1-1, observed_on<2030-1-1)
+inat10s<-inat_clean_corrected %>% filter(observed_on>2010-1-1, observed_on<2020-1-1)
+inat00s<-inat_clean_corrected %>% filter(observed_on>2000-1-1, observed_on<2010-1-1)
+inat90s<-inat_clean_corrected %>% filter(observed_on>1990-1-1, observed_on<2000-1-1)
+inat80sandbelow<-inat_clean_corrected %>% filter(observed_on<1990-1-1)
 
 #infected time series
 inat20s_infec<-inat20s %>% filter( field.phytoplasma.infection.=="Yes")
@@ -123,21 +276,20 @@ But maybe also try having size of bubbles indicating number of infected https://
 
 TO DO:
 -Turn lat long into equal area projection (eg. 1km by 1km squares), so we have gridded cells. Look at proportion infected to total observations in each cell.
--Look at year by year (or binned time periods) proportion infected individuals 
--Add user ID as random effect or limit number of observations per user? Or see what the max number of infected observations there are by user ID to see if anyone was specifically seeking them out or not, useful to report
 -occupancy model for space: different number of samples per grid, accounting for them
+-see what predicts infection?? worldclim data or crop cover? human population density? trillium density? Vector density? ****
 
-
-
+Main maps
 ```{r}
 #http://mbontrager.org/blog/2016/08/01/Maps-in-R
-infectedpoints <- filter(inat, field.phytoplasma.infection.=="Yes")
-normalpoints <- filter(inat, field.phytoplasma.infection.=="")
+infectedpoints <- filter(inat_clean_corrected, field.phytoplasma.infection.=="Yes")
+normalpoints <- filter(inat_clean_corrected, field.phytoplasma.infection.=="")
 infcolour <- brewer.pal(6, "Paired")[5]
 normcolour <- brewer.pal(6, "Paired")[3]
 
-usa <- map_data("usa")
+usa <- map_data("state")
 canada <- map_data("worldHires","Canada")
+
 NAmap <- ggplot() + geom_polygon(data = usa, 
                                  aes(x=long, y = lat, group = group), 
                                  fill = "white", 
@@ -147,10 +299,12 @@ NAmap <- ggplot() + geom_polygon(data = usa,
     coord_fixed(xlim = c(-95, -70),  ylim = c(33, 50), ratio = 1.2)
 NAmap
 
-range<-NAmap+ geom_point(data=inat, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 1967-2023")
-infections<-NAmap+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 1989-2023")
-range+infections
+range<-NAmap+ geom_point(data=inat_clean_corrected, aes(x=longitude, y=latitude), fill="hotpink",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "*Trillium grandiflorum* observations") +theme(title = ggtext::element_markdown())
+infections<-NAmap+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), fill="yellowgreen",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "Infected *T. grandiflorum* observations") +theme(title = ggtext::element_markdown())
+rangemap<-plot_grid(range,infections, labels=c("A", "B"))
+ggsave2("phytoplasma_rangemap.png", rangemap, dpi=600, width=10, height=8)
 ```
+
 Time series
 ```{r}
 #2020 and above
