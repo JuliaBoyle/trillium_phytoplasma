@@ -72,6 +72,21 @@ cor(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
 ```
 
 ```{r}
+hist(trillium$Freq_hemiptera_adults)
+hist(log(trillium$Freq_infection_of_adults))
+hist(trillium$Freq_hemiptera_total)
+hist(log(trillium$Total_trilliums))
+hist(log(trillium$Young_to_repro_ratio))
+
+summary(lm(Freq_infection_of_adults~Freq_hemiptera_adults, data=trillium))
+
+summary(lm(Freq_hemiptera_total~Total_trilliums, data=trillium))
+
+summary(lm(log(Young_to_repro_ratio)~Freq_infection_of_adults, data=trillium))
+```
+
+
+```{r}
 trillium %>% ggplot(aes(x=Total_trilliums, y=Total_infec_trilliums, color=Freq_hemiptera_adults))+geom_point()+theme_cowplot()+labs(x="Trillium (no.)", y="Symptomatic trillium (no.)")
 trillium %>% ggplot(aes(x=Total_adult_trilliums, y=Total_infec_trilliums, color=Freq_hemiptera_adults))+geom_point()+theme_cowplot()+labs(x="Flowering trillium (no.)", y="Symptomatic trillium (no.)")+scale_color_continuous("Freq. of hemiptera on flowering trillium",low = "blue", high = "hotpink")
 ```
@@ -102,7 +117,7 @@ trilliumY %>%
 hist(trillium$Freq_hemiptera_adults)
 hist(trillium$Freq_infection_of_adult)
 trillium %>%
-  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm")+xlab("Frequency of hemiptera on adults")+ylab("Frequency of infected adults")+theme_cowplot()+ylim(0,0.23)
+  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", formula=y~x+0)+xlab("Frequency of hemiptera on adults")+ylab("Frequency of infected adults")+theme_cowplot()#+ylim(0,0.23) #forcing it to pass through 0??
 ```
 ```{r}
 trillium %>% 
@@ -126,13 +141,14 @@ trillium %>%
 Figure
 ```{r}
 fig2A<-trilliumY %>% 
-  ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method='gam', se=F, color="yellowgreen")+facet_wrap(~Year)+theme_cowplot()+xlab("Density of flowering trillium in 1m^2")+ylab("Frequency of infected adults")
+  ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method='gam', se=F, color="limegreen")+facet_wrap(~Year)+theme_cowplot()+xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+ylab("Proportion of flowering trillium infected")
+hist(trilliumY$Total_adult_trilliums)
 fig2B<-trillium %>%
-  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+xlab("Frequency of hemiptera on flowering trillium")+ylab("Frequency of infected flowering trillium")+theme_cowplot()+ylim(0,0.23)
+  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="limegreen")+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()+ylim(0,0.23)+annotate("text", x=0.5, y=0.2, label= "R = 0.33")
 fig2C<-trillium %>% 
-  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+theme_cowplot()+xlab("Density of all trilliums no./m^2")+ ylab("Frequency of hemiptera on all trilliums")
+  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", color="limegreen")+theme_cowplot()+xlab(expression('Density of all trillium (no./1 m'^2* ')'))+ ylab("Proportion of all trillium with hemiptera")+annotate("text", x=150, y=0.9, label= "R = -0.48")
 fig2D<-trillium %>% 
-  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="yellowgreen")+theme_cowplot()+xlab("Infection frequency of flowering trillium")+ylab("Non-flowering:Flowering ratio")
+  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="limegreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("Non-flowering:flowering ratio")+annotate("text", x=0.05, y=7.5, label= "R = 0.10")
 
 plot_grid(fig2A,fig2B,fig2C, fig2D, labels=c("A", "B", "C", "D")) #save 10x12
 plot_grid(fig2A,fig2B,fig2C, labels=c("A", "B", "C"), ncol=1)
@@ -141,7 +157,6 @@ fig2BC<-fig2B/fig2C+plot_annotation(tag_levels = list(c("B", "C")))+ plot_layout
 plot_grid(fig2Alabelled,fig2BC, ncol=1)
 fig2Alabelled+fig2BC
 ```
-
 
 ## Trait data
 ```{r}
@@ -186,7 +201,6 @@ summary(lmer(log(Sepal_length_cm)~Infection_chr+(1|Plot/Population), data=traits
 Anova(lmer(log(Sepal_length_cm)~Infection_chr+(1|Plot/Population), data=traits), type=3) #p=2.342e-07
 ```
 
-
 ## Sticky trap data
 ```{r}
 sticky<-read.csv("Trillium_Field_Data - Sticky traps.csv")
@@ -209,6 +223,8 @@ sticky_noout %>% ggplot(aes(x=Num_sapsuckers_on_trap, y=Freq_hemiptera_total, co
 
 # iNaturalist data
 ```{r}
+#install.packages('tmap')
+
 library(maps)
 library(mapdata)
 library(ggmap)
@@ -222,10 +238,15 @@ library(rnaturalearthdata)
 #library(geodata)
 library(sf)
 library(plyr)
-library(data.table)
-#library(tidyterra)
+library(spData)
+library(spDataLarge)
+library(tidyterra)
+library(terra)
 #library(rnaturalearthhires)
-#library(raster)
+library(tmap) 
+```
+
+```{r}
 inat<-read.csv("iNat_alltrilliums_2023_07_05.csv")
 head(inat)
 inat<-inat %>% mutate(country_code=ifelse(grepl("Canada", place_country_name), "CAN", "USA"))
@@ -305,49 +326,106 @@ rangemap<-plot_grid(range,infections, labels=c("A", "B"))
 ggsave2("phytoplasma_rangemap.png", rangemap, dpi=600, width=10, height=8)
 ```
 
-Time series
+tmap version
+#https://edzer.github.io/sdsr_exercises/08.html
 ```{r}
-#2020 and above
-NAmap+ geom_point(data=inat20s, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 2020-2023")
-NAmap+ geom_point(data=inat20s_infec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 2020-2023")
+us_states_map = tm_shape(us_states, crs = "EPSG:9822") + 
+  tm_polygons() + 
+  tm_layout(frame = FALSE)
 
-#2010-2020
-NAmap+ geom_point(data=inat10s, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 2010-2020")
-NAmap+ geom_point(data=inat10s_infec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 2010-2020")
 
-#2000-2010
-NAmap+ geom_point(data=inat00s, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 2000-2010")
-NAmap+ geom_point(data=inat00s_infec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 2000-2010")
+ne = ne_countries(returnclass = "sf")
+ne |> filter(admin == "Canada") -> canada
+ca_eqc = st_transform(canada,"EPSG:9822")
+ne |> filter(admin == "United States of America") -> us
+us_eqc = st_transform(us,"EPSG:9822")
+plot(us_eqc)
 
-#1990-2000
-NAmap+ geom_point(data=inat90s, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 1990-2000")
-NAmap+ geom_point(data=inat90s_infec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 1990-2000")
-
-#1980s and below
-NAmap+ geom_point(data=inat80sandbelow, aes(x=longitude, y=latitude), fill="blue",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Trillium grandiflorum range 1980s and below")
-NAmap+ geom_point(data=inat80sandbelow_infec, aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")+ggtitle("Phytoplasma infected Trillium grandiflorum 1980s and below")
+nz_elev = rast(system.file("raster/nz_elev.tif", package = "spDataLarge"))
 ```
 
+sf version with ggplot
+```{r}
+st_layers("gadm41_CAN.gpkg")
+canada <- read_sf("gadm41_CAN.gpkg", layer = "ADM_ADM_1") #https://inbo.github.io/tutorials/tutorials/spatial_standards_vector/
+
+#canada <- read_sf("gadm41_CAN_1.shp")
+#gadm41_CAN_1.shp
+st_layers("gadm41_USA.gpkg")
+us <- read_sf("gadm41_USA.gpkg", layer = "ADM_ADM_1")
+plot(canada)
+plot(us)
+#b = st_buffer(canada[1,1], units::set_units(10, km)) #|> st_cast("LINESTRING")
+
+#https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-lakes/
+# Create temp files
+temp2 <- tempfile()
+# Download the zip file and save unzipped
+# Unzip the contents of the temp and save unzipped content in 'temp2'
+unzip(zipfile = "ne_10m_lakes.zip", exdir = temp2)
+# Read the shapefile. Alternatively make an assignment, such as f<-sf::read_sf(your_SHP_file)
+lakes<-sf::read_sf(temp2)
+
+rangev2<-ggplot() + geom_sf(data = canada, fill="white") + geom_sf(data = us, fill="white")+geom_sf(data=lakes)+coord_sf(xlim = c(-95, -70),  ylim = c(33, 50))+ geom_point(data=inat_clean_corrected, aes(x=longitude, y=latitude), fill="hotpink",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "*Trillium grandiflorum* observations") +theme(title = ggtext::element_markdown()) 
+#THIS MADE ME NOTICE A FEW OBSERVATIONS IN LAKE ONTARIO- FIND AND REMOVE!
+#could use county map and colour by number of observations within a given county?
+
+infectionsv2<-ggplot() + geom_sf(data = canada, fill="white") + geom_sf(data = us, fill="white")+geom_sf(data=lakes)+coord_sf(xlim = c(-95, -70),  ylim = c(33, 50))+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), fill="limegreen",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "Infected *T. grandiflorum* observations") +theme(title = ggtext::element_markdown())
+rangemapv2<-plot_grid(rangev2,infectionsv2, labels=c("A", "B"))
+ggsave2("phytoplasma_rangemapV2.png", rangemapv2, dpi=600, width=10, height=8)
+```
+```{r}
+#https://www.naturalearthdata.com/downloads/10m-cultural-vectors/parks-and-protected-lands/
+#https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-urban-area/ 
+```
 
 ```{r}
-#https://axelhodler.medium.com/creating-a-heat-map-from-coordinates-using-r-780db4901075
-map_bounds <- c(left = -90, bottom = 30, right = -70, top = 50)
-coords.map <- get_stamenmap(map_bounds, zoom = 7, maptype = "toner-lite")
-coords.map <- ggmap(coords.map, extent="device", legend="none")
-
-coords.map.infecscale <- coords.map + stat_density2d(data=inatinfec,  aes(x=longitude, y=latitude, fill=..level.., alpha=..level..), geom="polygon")+scale_fill_gradientn(colours=rev(brewer.pal(7, "Spectral")))+ theme_bw()+xlab("Longitude")+ylab("Latitude")
-
-coords.map+ geom_point(data=inatinfec,  aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")
-
-coords.map.infecscale+ geom_point(data=inatinfec,  aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)
-coords.map.infecscale
-
-coords.map.scale <- coords.map + stat_density2d(data=inat,  aes(x=longitude, y=latitude, fill=..level.., alpha=..level..), geom="polygon")+scale_fill_gradientn(colours=rev(brewer.pal(7, "Spectral")))+ theme_bw()+xlab("Longitude")+ylab("Latitude")
-
-coords.map+ geom_point(data=inat,  aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)+xlab("Longitude")+ylab("Latitude")
-
-coords.map.scale+ geom_point(data=inat,  aes(x=longitude, y=latitude), fill="red",shape=21, size=1,alpha=0.3)
-coords.map.scale
+map_can = tm_shape(canada) + tm_polygons()
+map_can
 ```
+
+Equal area projections
+https://r.geocompx.org/reproj-geo-data.html
+https://bbest.github.io/R-adv-spatial-lessons/tidy.html#challenge-project-recalculate-area
+https://epsg.io/9822-method
+https://www.andrewheiss.com/blog/2023/07/28/gradient-map-fills-r-sf/ !!!
+```{r}
+library(geosphere)
+st_crs(us) # get CRS
+st_crs(canada)
+st_crs(lakes)
+
+crs_usa = '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs'
+usa_geo = us %>%
+  st_transform(st_crs("EPSG:9822"))
+st_crs(us)
+st_crs(usa_geo)
+canada_geo = canada %>%
+  st_transform(st_crs("EPSG:9822"))
+lakes_geo = lakes %>%
+  st_transform(st_crs("EPSG:9822"))
+basemap<-canada_geo+usa_geo+lakes_geo
+
+ggplot() + geom_sf(data = canada, fill="white") + geom_sf(data = us, fill="white")+geom_sf(data=lakes)+coord_sf(xlim = c(-95, -70),  ylim = c(33, 50))+ geom_point(data=inat_clean_corrected, aes(x=longitude, y=latitude), fill="hotpink",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "*Trillium grandiflorum* observations") +theme(title = ggtext::element_markdown()) 
+#THIS MADE ME NOTICE A FEW OBSERVATIONS IN LAKE ONTARIO- FIND AND REMOVE!
+#could use county map and colour by number of observations within a given county?
+ggplot() + geom_sf(data = canada_geo, fill="white") + geom_sf(data = usa_geo, fill="white")+geom_sf(data=lakes_geo)+coord_sf(xlim = c(-95, -70),  ylim = c(33, 50), crs = "EPSG:9822")+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), fill="limegreen",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "Infected *T. grandiflorum* observations") +theme(title = ggtext::element_markdown())
+
+infection_coords_geo <- st_as_sf(x = inatinfec,                         
+           coords = c("longitude", "latitude"),
+           crs = "EPSG:9822")
+observation_coords_geo <- st_as_sf(x = inat_clean_corrected,                         
+           coords = c("longitude", "latitude"),
+           crs = "EPSG:9822")
+```
+density
+```{r}
+library(spatstat)
+infection_ppp <- as.ppp(infection_coords_geo, W = as.owin(canada_geo))
+# Check to see if it worked
+plot(infection_ppp)
+infection_ppp_stars <- stars::st_as_stars(density(infection_ppp, dimyx = 300))
+```
+
 
 
