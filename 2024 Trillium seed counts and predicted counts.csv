@@ -1,0 +1,401 @@
+ID,Infection_status,lf_length,lf_width,stem_diameter_mm,fruit_width,fruit_length,transect_number,field_notes,Paired_data_plants,seed_count,seed_count_notes,Seed_count_real_or_predicted,pair_number
+F1,Nonsymptomatic,10.4,,4.9,8.9,11.9,,,No,38,,Real,
+F10,Nonsymptomatic,11.6,,3.8,7.2,10.2,,,No,24,,Real,
+F100,Nonsymptomatic,9,,3.1,6.4,8.9,,,No,18,,Real,
+F11,Nonsymptomatic,14.6,,4.4,4.7,7.7,,,No,1,,Real,
+F12,Nonsymptomatic,12.4,,4.2,7,8.7,,,No,41,,Real,
+F13,Nonsymptomatic,10.2,,3.5,5.8,7.9,,,No,16,,Real,
+F14,Nonsymptomatic,9.1,,3.1,4.6,6.3,,,No,9,,Real,
+F15,Nonsymptomatic,11.6,,4.3,6.2,10.2,,,No,21,,Real,
+F16,Nonsymptomatic,13.4,,4.6,8.1,11.9,,,No,47,,Real,
+F17,Nonsymptomatic,9.6,,3.6,4.4,6.4,,,No,5,,Real,
+F18,Nonsymptomatic,12.6,,5.6,9.3,13.5,,,No,65,,Real,
+F19,Nonsymptomatic,6.5,,2.6,3.9,5.4,,munched,No,2,,Real,
+F2,Nonsymptomatic,9.6,,3.9,6.8,9.2,,,No,15,,Real,
+F20,Nonsymptomatic,9.2,,3,5.1,6.5,,,No,11,,Real,
+F21,Nonsymptomatic,8.9,,4.9,6.9,10.9,,munched,No,30,,Real,
+F22,Nonsymptomatic,8,,3.2,5.3,6.6,,,No,10,,Real,
+F23,Nonsymptomatic,10.5,,4.5,5,6,,,No,0,,Real,
+F24,Nonsymptomatic,8.6,,2.6,6,6.8,,antho,No,5,,Real,
+F25,Nonsymptomatic,8.2,,2.7,6,6.5,,,No,15,,Real,
+F26,Nonsymptomatic,10,,4.6,4.5,8.4,,tear/munch,No,0,seed pod deflated,Real,
+F27,Nonsymptomatic,6.6,,3,3.6,4.9,,munch,No,0,seed pod deflated,Real,
+F28,Nonsymptomatic,11,,4.4,6.6,9.9,,,No,33,,Real,
+F29,Nonsymptomatic,10,,4.8,7,8.5,,munch,No,29,,Real,
+F3,Nonsymptomatic,8,,2.8,5.1,7.1,,,No,12,,Real,
+F30,Nonsymptomatic,9.9,,3.7,4.6,6.4,,,No,2,,Real,
+F31,Nonsymptomatic,10.9,,6.8,11.1,14.2,,,No,69,,Real,
+F32,Nonsymptomatic,11.9,,5.7,8.3,11.6,,,No,50,,Real,
+F33,Nonsymptomatic,10.4,,4.5,6.2,9.1,,,No,23,,Real,
+F34,Nonsymptomatic,7.7,,2.9,6,6.9,,,No,16,,Real,
+F35,Nonsymptomatic,9.4,,3.5,6.2,8.7,,,No,26,,Real,
+F36,Nonsymptomatic,9.3,,3.4,5.2,7.3,,,No,17,,Real,
+F37,Nonsymptomatic,7.9,,2.9,5.1,7,,,No,11,,Real,
+F38,Nonsymptomatic,9,,3.2,6.5,6.9,,,No,3,,Real,
+F39,Nonsymptomatic,13.6,,6,9.8,15.4,,,No,80,,Real,
+F4,Nonsymptomatic,12.9,,4.3,9.3,12.3,,,No,45,,Real,
+F40,Nonsymptomatic,7.2,,2.9,4.3,6.5,,,No,5,,Real,
+F41,Nonsymptomatic,9.2,,3.3,4.1,5,,,No,0,,Real,
+F42,Nonsymptomatic,11,,4.4,6.1,8.5,,,No,22,,Real,
+F43,Nonsymptomatic,12.3,,4.2,5.5,8.4,,,No,1,,Real,
+F44,Nonsymptomatic,12.4,,4.9,8.7,11,,,No,43,,Real,
+F45,Nonsymptomatic,13.6,,5.7,7.7,11.1,,,No,28,,Real,
+F46,Nonsymptomatic,9.7,,3.6,6.2,8.9,,,No,18,,Real,
+F47,Nonsymptomatic,11.4,,4.5,6.5,7.7,,,No,17,,Real,
+F48,Nonsymptomatic,8,,2.7,4.2,6.8,,,No,8,,Real,
+F49,Nonsymptomatic,10.7,,4.3,7.5,8.8,,,No,32,,Real,
+F5,Nonsymptomatic,9.2,,3.5,7.2,7.5,,,No,20,,Real,
+F50,Nonsymptomatic,9.6,,6.6,4.6,5.4,,,No,0,,Real,
+F51,Nonsymptomatic,13.5,,6.6,8,11.6,,,No,52,,Real,
+F52,Nonsymptomatic,9.9,,4.5,6.8,9.5,,,No,23,,Real,
+F53,Nonsymptomatic,11.5,,5.7,7.5,11.3,,,No,43,,Real,
+F54,Nonsymptomatic,9.5,,3.6,5.7,8.4,,,No,20,,Real,
+F55,Nonsymptomatic,9.7,,4.1,5.7,7.6,,,No,22,,Real,
+F56,Nonsymptomatic,11.8,,5.7,4.5,7.5,,,No,6,,Real,
+F57,Nonsymptomatic,9,,4.1,6.2,9.7,,,No,19,,Real,
+F58,Nonsymptomatic,9.6,,3.2,5.5,6.7,,,No,10,,Real,
+F59,Nonsymptomatic,14.5,,5,7.2,11.8,,,No,36,,Real,
+F6,Nonsymptomatic,12.1,,3.9,7.1,10.9,,,No,36,,Real,
+F60,Nonsymptomatic,11.8,,4.1,5.6,8.3,,,No,21,,Real,
+F61,Nonsymptomatic,9.7,,3.4,5.6,8.6,,,No,16,,Real,
+F62,Nonsymptomatic,9,,3.5,8,9.9,,,No,19,,Real,
+F63,Nonsymptomatic,7.6,,2,4.9,6.6,,,No,8,,Real,
+F64,Nonsymptomatic,10.5,,3.9,6.8,9.6,,,No,15,,Real,
+F65,Nonsymptomatic,5.3,,2.2,4,5.7,,lf munched,No,3,,Real,
+F66,Nonsymptomatic,7.1,,3.2,6.6,8.8,,lf munched,No,24,,Real,
+F67,Nonsymptomatic,8.9,,2.1,4.6,6.5,,,No,0,,Real,
+F68,Nonsymptomatic,8.4,,2.4,6.2,8.2,,,No,20,,Real,
+F69,Nonsymptomatic,9.3,,2.8,5.8,7,,,No,14,,Real,
+F7,Nonsymptomatic,8.2,,2.8,5.5,7.2,,,No,13,,Real,
+F70,Nonsymptomatic,9.7,,3.5,6.3,10.8,,,No,20,,Real,
+F71,Nonsymptomatic,11.4,,3.8,6.2,10.3,,,No,20,,Real,
+F72,Nonsymptomatic,7.1,,2.4,4.7,6.8,,lf munched,No,11,,Real,
+F73,Nonsymptomatic,10.7,,3,6.9,9.3,,,No,18,,Real,
+F74,Nonsymptomatic,7.8,,2.9,6.2,7.5,,,No,16,,Real,
+F75,Nonsymptomatic,9.5,,2.7,5,7.6,,,No,7,,Real,
+F76,Nonsymptomatic,7.3,,2.4,5.5,7.9,,,No,17,,Real,
+F77,Nonsymptomatic,8,,2.5,5.3,5.9,,,No,10,,Real,
+F78,Nonsymptomatic,8.8,,3.6,5.6,7.4,,,No,18,,Real,
+F79,Nonsymptomatic,10.1,,3.4,6.7,9.3,,,No,24,,Real,
+F8,Nonsymptomatic,11.3,,3.5,6.5,10.3,,,No,25,,Real,
+F80,Nonsymptomatic,9.9,,2.9,6.4,9.7,,,No,17,,Real,
+F81,Nonsymptomatic,12.4,,4.4,7.3,10.6,,,No,15,,Real,
+F82,Nonsymptomatic,12.8,,4.5,7.6,11.8,,,No,30,,Real,
+F83,Nonsymptomatic,10.3,,3.7,7.1,10.1,,,No,30,,Real,
+F84,Nonsymptomatic,10.1,,3.4,6.8,10.4,,,No,34,,Real,
+F85,Nonsymptomatic,11.8,,3.7,6.6,10.3,,,No,27,,Real,
+F86,Nonsymptomatic,10.4,,3.4,5.8,9.2,,,No,18,,Real,
+F87,Nonsymptomatic,9.2,,3.1,5.8,7.1,,,No,16,,Real,
+F88,Nonsymptomatic,7.3,,2,4.2,5.5,,antho starting,No,6,,Real,
+F89,Nonsymptomatic,12.5,,4.4,6.8,9.8,,,No,39,,Real,
+F9,Nonsymptomatic,9.6,,3.9,6,8.5,,,No,15,,Real,
+F90,Nonsymptomatic,9,,2.6,4.8,7.5,,,No,14,,Real,
+F91,Nonsymptomatic,9,,3.4,6.3,8.2,,,No,21,,Real,
+F92,Nonsymptomatic,9.5,,2.4,5.9,8.2,,,No,19,,Real,
+F93,Nonsymptomatic,8.8,,2.7,5.6,7.8,,,No,15,,Real,
+F94,Nonsymptomatic,9.1,,2.7,6,7.1,,,No,16,,Real,
+F95,Nonsymptomatic,8.2,,3,5.8,9,,maybe diseased,No,20,,Real,
+F96,Nonsymptomatic,9,,3.5,6.9,10,,,No,26,,Real,
+F97,Nonsymptomatic,6.8,,2.5,5,6.8,,,No,10,,Real,
+F98,Nonsymptomatic,10.4,,2.8,6.7,8.3,,,No,23,,Real,
+F99,Nonsymptomatic,8.8,,3,5.5,7.8,,,No,9,,Real,
+D001,Symptomatic,9.9,6.1,,NA,NA,1,,Yes,0,no fruit,Real,1
+D003,Symptomatic,8.9,4.7,,5.5,7.5,1,,Yes,12,12,Real,3
+D005,Symptomatic,10.4,6.1,,8,10,5,,Yes,30,30,Real,5
+D006,Symptomatic,11.9,6.7,,NA,NA,6,,Yes,0,no fruit,Real,6
+D007,Symptomatic,10.8,8.5,,6.1,9.8,7,,Yes,30,30,Real,7
+D008,Symptomatic,7.8,4,,1.3,4.6,8,,Yes,0,0,Real,8
+D009,Symptomatic,12.8,8.8,,7.3,12.1,9,,Yes,32,32,Real,9
+D010,Symptomatic,8.4,5.1,,6.6,8.1,10,,Yes,16,16,Real,10
+D011,Symptomatic,9.9,5.6,,7,8.9,11,,Yes,25,25,Real,11
+D012,Symptomatic,10.5,6.4,,4.8,6.5,12,,Yes,9,9,Real,12
+D013,Symptomatic,9.4,7.4,,6.8,7.8,9,,Yes,7,7,Real,13
+D014,Symptomatic,9.8,8.1,,6.7,7.2,14,,Yes,9,9,Real,14
+D015,Symptomatic,12.4,8.4,,7.1,9.3,15,,Yes,20,20,Real,15
+D016,Symptomatic,8,4,,NA,NA,16,,Yes,,not relocated,Real,16
+D017,Symptomatic,14.2,11.9,,11,13.9,17,,Yes,62,62,Real,17
+D018,Symptomatic,8.3,4.7,,NA,NA,18,,Yes,,not relocated,Real,18
+D020,Symptomatic,11,7.9,,7.1,8.6,20,,Yes,8,8,Real,20
+D021,Symptomatic,7.9,5.1,,NA,NA,21,,Yes,0,no fruit,Real,21
+D023,Symptomatic,11.5,7.5,,6.5,9.8,23,,Yes,,NEED TO CALC FROM 100 SAMPLE,Real,23
+D024,Symptomatic,9,7.3,,9.1,11.1,24,,Yes,,NEED TO CALC FROM 100 SAMPLE,Real,24
+D026,Symptomatic,5.6,5.4,,6.7,7.6,26,,Yes,14,14,Real,26
+D030,Symptomatic,9.4,5,,NA,NA,20,,Yes,,not relocated,Real,30
+D031,Symptomatic,10.3,5.8,,6.6,9,31,,Yes,19,19,Real,31
+D034,Symptomatic,7.6,5.3,,5.6,7.2,34,,Yes,11,11,Real,34
+D035,Symptomatic,6.6,3.8,,5.2,7.1,35,,Yes,9,9,Real,35
+D036,Symptomatic,8,4,,4.9,6.7,36,,Yes,7,7,Real,36
+D039,Symptomatic,5,2.8,,4.7,6.5,26,,Yes,6,6,Real,39
+D040,Symptomatic,7.4,4.8,,3.8,5,40,,Yes,6,6,Real,40
+D041,Symptomatic,8,4.6,,3.4,6.5,41,,Yes,6,6,Real,41
+D042,Symptomatic,8.6,4.2,,3,3.5,42,,Yes,0,0,Real,42
+D047,Symptomatic,5.9,3.6,,NA,NA,47,,Yes,,not relocated,Real,47
+D048,Symptomatic,10,5.7,,7,9.2,48,,Yes,14,14,Real,48
+D049,Symptomatic,8.8,5.7,,1.9,3.8,49,,Yes,0,,Real,49
+D051,Symptomatic,10.3,8.5,,NA,NA,51,,Yes,0,no fruit,Real,51
+D052,Symptomatic,8.1,5.1,,NA,NA,51,,Yes,0,no fruit,Real,52
+D053,Symptomatic,9.8,6.4,,6.4,10.1,51,,Yes,0,,Real,53
+D056,Symptomatic,7.5,4.5,,NA,NA,56,,Yes,0,no fruit,Real,56
+D062,Symptomatic,11.1,7.9,,1.3,3.9,62,,Yes,0,0,Real,62
+D063,Symptomatic,9.2,6.2,,5.7,7.4,62,,Yes,13,13,Real,63
+D065,Symptomatic,9.5,5.7,,NA,NA,65,,Yes,,gone rotten,Real,65
+D066,Symptomatic,5.9,3.3,,NA,NA,66,,Yes,,everything but step & half a leaf gone,Real,66
+D069,Symptomatic,7.5,5.7,,NA,NA,69,,Yes,0,no fruit,Real,69
+D070,Symptomatic,7.5,5.3,,NA,NA,70,,Yes,0,no fruit,Real,70
+D071,Symptomatic,7.7,3.7,,NA,NA,71,,Yes,0,no fruit,Real,71
+D073,Symptomatic,8,4.8,,NA,NA,73,,Yes,0,no fruit,Real,73
+D075,Symptomatic,8.3,5.2,,NA,NA,75,,Yes,,not relocated,Real,75
+D076,Symptomatic,9.1,6.3,,NA,NA,76,,Yes,0,no fruit,Real,76
+D077,Symptomatic,9.5,8.5,,6.3,8.5,77,,Yes,8,8,Real,77
+D078,Symptomatic,12.2,7.4,,NA,NA,78,,Yes,0,no fruit,Real,78
+D079,Symptomatic,14.8,10.7,,NA,NA,79,,Yes,0,no fruit,Real,79
+D080,Symptomatic,13.5,8.5,,3.2,7.5,80,,Yes,0,0,Real,80
+D081,Symptomatic,6.5,3.1,,NA,NA,80,,Yes,0,no fruit,Real,81
+D092,Symptomatic,6.6,3.9,,4.1,5,36,,Yes,2,2,Real,92
+D093,Symptomatic,5.3,4.4,,NA,NA,42,,Yes,,not relocated,Real,93
+D094,Symptomatic,7,4.9,,NA,NA,40,,Yes,,not relocated,Real,94
+D095,Symptomatic,8.7,5.8,,6.5,9.8,41,,Yes,18,18,Real,95
+D096,Symptomatic,11.1,6.9,,NA,NA,16,,Yes,0,no fruit,Real,96
+D097,Symptomatic,9.9,5.5,,NA,NA,16,,Yes,0,no fruit,Real,97
+D098,Symptomatic,9.5,5.4,,NA,NA,16,,Yes,0,no fruit,Real,98
+D099,Symptomatic,10.9,6.3,,2.9,7.3,16,,Yes,6,6,Real,99
+D100,Symptomatic,8.1,5.5,,NA,NA,16,,Yes,0,no fruit,Real,100
+D101,Symptomatic,10.2,7.1,,NA,NA,101,,Yes,0,no fruit,Real,101
+D102,Symptomatic,13.7,10.2,,NA,NA,101,,Yes,,not relocated,Real,102
+D103,Symptomatic,6,3,,NA,NA,101,,Yes,0,no fruit,Real,103
+D104,Symptomatic,10.6,7,,6.2,8.1,20,,Yes,8,8,Real,104
+D105,Symptomatic,9.7,5.1,,NA,NA,20,,Yes,,not relocated,Real,105
+D106,Symptomatic,10.6,7.2,,5.8,7.3,20,,Yes,,NEED TO CALC FROM 100 SAMPLE,Real,106
+D107,Symptomatic,6.8,4.3,,NA,NA,20,,Yes,0,no fruit,Real,107
+D108,Symptomatic,5.8,2.8,,NA,NA,108,,Yes,0,no fruit,Real,108
+D109,Symptomatic,11,6.8,,NA,NA,109,,Yes,0,no fruit,Real,109
+D110,Symptomatic,10.2,7.4,,NA,NA,109,,Yes,0,no fruit,Real,110
+D111,Symptomatic,9.1,5,,NA,NA,6,,Yes,0,no fruit,Real,111
+D112,Symptomatic,10.8,6.4,,NA,NA,112,,Yes,0,no fruit,Real,112
+D113,Symptomatic,11.4,6.8,,7.2,8.8,113,,Yes,26,26,Real,113
+D114,Symptomatic,8.6,5.2,,7.6,11,114,,Yes,13,13,Real,114
+D115,Symptomatic,11.6,8.1,,2.9,4.9,115,,Yes,0,0,Real,115
+D116,Symptomatic,8.6,5.5,,7.3,9.4,116,,Yes,28,28,Real,116
+D117,Symptomatic,10.1,5.8,,NA,NA,116,,Yes,0,no fruit,Real,117
+D118,Symptomatic,10.9,6.4,,NA,NA,76,,Yes,0,no fruit,Real,118
+D119,Symptomatic,6,3.1,,NA,NA,73,,Yes,0,no fruit,Real,119
+D120,Symptomatic,7.6,4.4,,NA,NA,49,,Yes,,not relocated ,Real,120
+D121,Symptomatic,5.6,2.7,,NA,NA,49,,Yes,0,no fruit,Real,121
+D122,Symptomatic,6.4,3.3,,NA,NA,122,,Yes,0,no fruit,Real,122
+D123,Symptomatic,5.4,4,,NA,NA,123,,Yes,0,no fruit,Real,123
+D124,Symptomatic,10.2,6,,2,4,47,,Yes,0,0,Real,124
+D125,Symptomatic,6.2,5,,NA,NA,125,,Yes,,not relocated,Real,125
+D126,Symptomatic,8.2,5.4,,NA,NA,125,,Yes,,not relocated,Real,126
+D127,Symptomatic,6.2,3.6,,NA,NA,69,,Yes,0,no fruit,Real,127
+D128,Symptomatic,10.8,7,,3.4,7.2,69,,Yes,,NEED TO CALC FROM 100 SAMPLE,Real,128
+D129,Symptomatic,5.6,3.2,,NA,NA,69,,Yes,0,no fruit,Real,129
+D130,Symptomatic,7,3.8,,NA,NA,130,,Yes,0,no fruit,Real,130
+D131,Symptomatic,4.8,3,,NA,NA,130,,Yes,0,no fruit,Real,131
+D132,Symptomatic,6.6,4.3,,NA,NA,130,,Yes,0,no fruit,Real,132
+D133,Symptomatic,8.7,5.9,,NA,NA,133,,Yes,0,no fruit,Real,133
+D134,Symptomatic,7.4,3.8,,NA,NA,133,,Yes,,not relocated,Real,134
+D135,Symptomatic,8.4,4.8,,7.3,8.8,135,,Yes,0,0,Real,135
+D136,Symptomatic,4,3,,NA,NA,13,,Yes,0,no fruit,Real,136
+D137,Symptomatic,7.5,4.3,,NA,NA,136,,Yes,0,no fruit,Real,137
+D138,Symptomatic,11.4,5.8,,NA,NA,56,,Yes,0,no fruit,Real,138
+D139,Symptomatic,8.5,4.5,,NA,NA,21,,Yes,0,no fruit,Real,139
+D001,Symptomatic,9.9,6.1,,NA,NA,1,,Yes,18.427,,Predicted_from_lf_length,1
+D003,Symptomatic,8.9,4.7,,5.5,7.5,1,,Yes,14.80688,,Predicted_from_lf_length,3
+D005,Symptomatic,10.4,6.1,,8,10,5,,Yes,20.55655,,Predicted_from_lf_length,5
+D006,Symptomatic,11.9,6.7,,NA,NA,6,,Yes,28.53888,,Predicted_from_lf_length,6
+D007,Symptomatic,10.8,8.5,,6.1,9.8,7,,Yes,22.43606,,Predicted_from_lf_length,7
+D008,Symptomatic,7.8,4,,1.3,4.6,8,,Yes,11.64054,,Predicted_from_lf_length,8
+D009,Symptomatic,12.8,8.8,,7.3,12.1,9,,Yes,34.74792,,Predicted_from_lf_length,9
+D010,Symptomatic,8.4,5.1,,6.6,8.1,10,,Yes,13.27296,,Predicted_from_lf_length,10
+D011,Symptomatic,9.9,5.6,,7,8.9,11,,Yes,18.427,,Predicted_from_lf_length,11
+D012,Symptomatic,10.5,6.4,,4.8,6.5,12,,Yes,21.01112,,Predicted_from_lf_length,12
+D013,Symptomatic,9.4,7.4,,6.8,7.8,9,,Yes,16.51806,,Predicted_from_lf_length,13
+D014,Symptomatic,9.8,8.1,,6.7,7.2,14,,Yes,18.02833,,Predicted_from_lf_length,14
+D015,Symptomatic,12.4,8.4,,7.1,9.3,15,,Yes,31.83702,,Predicted_from_lf_length,15
+D016,Symptomatic,8,4,,NA,NA,16,,Yes,12.16106,,Predicted_from_lf_length,16
+D017,Symptomatic,14.2,11.9,,11,13.9,17,,Yes,47.19722,,Predicted_from_lf_length,17
+D018,Symptomatic,8.3,4.7,,NA,NA,18,,Yes,12.9858,,Predicted_from_lf_length,18
+D020,Symptomatic,11,7.9,,7.1,8.6,20,,Yes,23.43931,,Predicted_from_lf_length,20
+D021,Symptomatic,7.9,5.1,,NA,NA,21,,Yes,11.89796,,Predicted_from_lf_length,21
+D023,Symptomatic,11.5,7.5,,6.5,9.8,23,,Yes,26.14812,,Predicted_from_lf_length,23
+D024,Symptomatic,9,7.3,,9.1,11.1,24,,Yes,15.13431,,Predicted_from_lf_length,24
+D026,Symptomatic,5.6,5.4,,6.7,7.6,26,,Yes,7.19437,,Predicted_from_lf_length,26
+D030,Symptomatic,9.4,5,,NA,NA,20,,Yes,16.51806,,Predicted_from_lf_length,30
+D031,Symptomatic,10.3,5.8,,6.6,9,31,,Yes,20.1118,,Predicted_from_lf_length,31
+D034,Symptomatic,7.6,5.3,,5.6,7.2,34,,Yes,11.1423,,Predicted_from_lf_length,34
+D035,Symptomatic,6.6,3.8,,5.2,7.1,35,,Yes,8.953315,,Predicted_from_lf_length,35
+D036,Symptomatic,8,4,,4.9,6.7,36,,Yes,12.16106,,Predicted_from_lf_length,36
+D039,Symptomatic,5,2.8,,4.7,6.5,26,,Yes,6.309545,,Predicted_from_lf_length,39
+D040,Symptomatic,7.4,4.8,,3.8,5,40,,Yes,10.66539,,Predicted_from_lf_length,40
+D041,Symptomatic,8,4.6,,3.4,6.5,41,,Yes,12.16106,,Predicted_from_lf_length,41
+D042,Symptomatic,8.6,4.2,,3,3.5,42,,Yes,13.86648,,Predicted_from_lf_length,42
+D047,Symptomatic,5.9,3.6,,NA,NA,47,,Yes,7.682279,,Predicted_from_lf_length,47
+D048,Symptomatic,10,5.7,,7,9.2,48,,Yes,18.83448,,Predicted_from_lf_length,48
+D049,Symptomatic,8.8,5.7,,1.9,3.8,49,,Yes,14.48653,,Predicted_from_lf_length,49
+D051,Symptomatic,10.3,8.5,,NA,NA,51,,Yes,20.1118,,Predicted_from_lf_length,51
+D052,Symptomatic,8.1,5.1,,NA,NA,51,,Yes,12.42998,,Predicted_from_lf_length,52
+D053,Symptomatic,9.8,6.4,,6.4,10.1,51,,Yes,18.02833,,Predicted_from_lf_length,53
+D056,Symptomatic,7.5,4.5,,NA,NA,56,,Yes,10.90124,,Predicted_from_lf_length,56
+D062,Symptomatic,11.1,7.9,,1.3,3.9,62,,Yes,23.95764,,Predicted_from_lf_length,62
+D063,Symptomatic,9.2,6.2,,5.7,7.4,62,,Yes,15.81105,,Predicted_from_lf_length,63
+D065,Symptomatic,9.5,5.7,,NA,NA,65,,Yes,16.88333,,Predicted_from_lf_length,65
+D066,Symptomatic,5.9,3.3,,NA,NA,66,,Yes,7.682279,,Predicted_from_lf_length,66
+D069,Symptomatic,7.5,5.7,,NA,NA,69,,Yes,10.90124,,Predicted_from_lf_length,69
+D070,Symptomatic,7.5,5.3,,NA,NA,70,,Yes,10.90124,,Predicted_from_lf_length,70
+D071,Symptomatic,7.7,3.7,,NA,NA,71,,Yes,11.3887,,Predicted_from_lf_length,71
+D073,Symptomatic,8,4.8,,NA,NA,73,,Yes,12.16106,,Predicted_from_lf_length,73
+D075,Symptomatic,8.3,5.2,,NA,NA,75,,Yes,12.9858,,Predicted_from_lf_length,75
+D076,Symptomatic,9.1,6.3,,NA,NA,76,,Yes,15.46898,,Predicted_from_lf_length,76
+D077,Symptomatic,9.5,8.5,,6.3,8.5,77,,Yes,16.88333,,Predicted_from_lf_length,77
+D078,Symptomatic,12.2,7.4,,NA,NA,78,,Yes,30.47433,,Predicted_from_lf_length,78
+D079,Symptomatic,14.8,10.7,,NA,NA,79,,Yes,53.81596,,Predicted_from_lf_length,79
+D080,Symptomatic,13.5,8.5,,3.2,7.5,80,,Yes,40.49698,,Predicted_from_lf_length,80
+D081,Symptomatic,6.5,3.1,,NA,NA,80,,Yes,8.75961,,Predicted_from_lf_length,81
+D092,Symptomatic,6.6,3.9,,4.1,5,36,,Yes,8.953315,,Predicted_from_lf_length,92
+D093,Symptomatic,5.3,4.4,,NA,NA,42,,Yes,6.737448,,Predicted_from_lf_length,93
+D094,Symptomatic,7,4.9,,NA,NA,40,,Yes,9.771929,,Predicted_from_lf_length,94
+D095,Symptomatic,8.7,5.8,,6.5,9.8,41,,Yes,14.17311,,Predicted_from_lf_length,95
+D096,Symptomatic,11.1,6.9,,NA,NA,16,,Yes,23.95764,,Predicted_from_lf_length,96
+D097,Symptomatic,9.9,5.5,,NA,NA,16,,Yes,18.427,,Predicted_from_lf_length,97
+D098,Symptomatic,9.5,5.4,,NA,NA,16,,Yes,16.88333,,Predicted_from_lf_length,98
+D099,Symptomatic,10.9,6.3,,2.9,7.3,16,,Yes,22.9322,,Predicted_from_lf_length,99
+D100,Symptomatic,8.1,5.5,,NA,NA,16,,Yes,12.42998,,Predicted_from_lf_length,100
+D101,Symptomatic,10.2,7.1,,NA,NA,101,,Yes,19.67668,,Predicted_from_lf_length,101
+D102,Symptomatic,13.7,10.2,,NA,NA,101,,Yes,42.30784,,Predicted_from_lf_length,102
+D103,Symptomatic,6,3,,NA,NA,101,,Yes,7.852161,,Predicted_from_lf_length,103
+D104,Symptomatic,10.6,7,,6.2,8.1,20,,Yes,21.47575,,Predicted_from_lf_length,104
+D105,Symptomatic,9.7,5.1,,NA,NA,20,,Yes,17.63829,,Predicted_from_lf_length,105
+D106,Symptomatic,10.6,7.2,,5.8,7.3,20,,Yes,21.47575,,Predicted_from_lf_length,106
+D107,Symptomatic,6.8,4.3,,NA,NA,20,,Yes,9.353671,,Predicted_from_lf_length,107
+D108,Symptomatic,5.8,2.8,,NA,NA,108,,Yes,7.516073,,Predicted_from_lf_length,108
+D109,Symptomatic,11,6.8,,NA,NA,109,,Yes,23.43931,,Predicted_from_lf_length,109
+D110,Symptomatic,10.2,7.4,,NA,NA,109,,Yes,19.67668,,Predicted_from_lf_length,110
+D111,Symptomatic,9.1,5,,NA,NA,6,,Yes,15.46898,,Predicted_from_lf_length,111
+D112,Symptomatic,10.8,6.4,,NA,NA,112,,Yes,22.43606,,Predicted_from_lf_length,112
+D113,Symptomatic,11.4,6.8,,7.2,8.8,113,,Yes,25.5824,,Predicted_from_lf_length,113
+D114,Symptomatic,8.6,5.2,,7.6,11,114,,Yes,13.86648,,Predicted_from_lf_length,114
+D115,Symptomatic,11.6,8.1,,2.9,4.9,115,,Yes,26.72634,,Predicted_from_lf_length,115
+D116,Symptomatic,8.6,5.5,,7.3,9.4,116,,Yes,13.86648,,Predicted_from_lf_length,116
+D117,Symptomatic,10.1,5.8,,NA,NA,116,,Yes,19.25098,,Predicted_from_lf_length,117
+D118,Symptomatic,10.9,6.4,,NA,NA,76,,Yes,22.9322,,Predicted_from_lf_length,118
+D119,Symptomatic,6,3.1,,NA,NA,73,,Yes,7.852161,,Predicted_from_lf_length,119
+D120,Symptomatic,7.6,4.4,,NA,NA,49,,Yes,11.1423,,Predicted_from_lf_length,120
+D121,Symptomatic,5.6,2.7,,NA,NA,49,,Yes,7.19437,,Predicted_from_lf_length,121
+D122,Symptomatic,6.4,3.3,,NA,NA,122,,Yes,8.570095,,Predicted_from_lf_length,122
+D123,Symptomatic,5.4,4,,NA,NA,123,,Yes,6.886436,,Predicted_from_lf_length,123
+D124,Symptomatic,10.2,6,,2,4,47,,Yes,19.67668,,Predicted_from_lf_length,124
+D125,Symptomatic,6.2,5,,NA,NA,125,,Yes,8.203278,,Predicted_from_lf_length,125
+D126,Symptomatic,8.2,5.4,,NA,NA,125,,Yes,12.70485,,Predicted_from_lf_length,126
+D127,Symptomatic,6.2,3.6,,NA,NA,69,,Yes,8.203278,,Predicted_from_lf_length,127
+D128,Symptomatic,10.8,7,,3.4,7.2,69,,Yes,22.43606,,Predicted_from_lf_length,128
+D129,Symptomatic,5.6,3.2,,NA,NA,69,,Yes,7.19437,,Predicted_from_lf_length,129
+D130,Symptomatic,7,3.8,,NA,NA,130,,Yes,9.771929,,Predicted_from_lf_length,130
+D131,Symptomatic,4.8,3,,NA,NA,130,,Yes,6.039484,,Predicted_from_lf_length,131
+D132,Symptomatic,6.6,4.3,,NA,NA,130,,Yes,8.953315,,Predicted_from_lf_length,132
+D133,Symptomatic,8.7,5.9,,NA,NA,133,,Yes,14.17311,,Predicted_from_lf_length,133
+D134,Symptomatic,7.4,3.8,,NA,NA,133,,Yes,10.66539,,Predicted_from_lf_length,134
+D135,Symptomatic,8.4,4.8,,7.3,8.8,135,,Yes,13.27296,,Predicted_from_lf_length,135
+D136,Symptomatic,4,3,,NA,NA,13,,Yes,5.069988,,Predicted_from_lf_length,136
+D137,Symptomatic,7.5,4.3,,NA,NA,136,,Yes,10.90124,,Predicted_from_lf_length,137
+D138,Symptomatic,11.4,5.8,,NA,NA,56,,Yes,25.5824,,Predicted_from_lf_length,138
+D139,Symptomatic,8.5,4.5,,NA,NA,21,,Yes,13.56647,,Predicted_from_lf_length,139
+H001,Nonsymptomatic,11.6,7.2,,,,1,,Yes,26.72634,,Predicted_from_lf_length,1
+H003,Nonsymptomatic,9.7,6.2,,,,1,,Yes,17.63829,,Predicted_from_lf_length,3
+H005,Nonsymptomatic,7.1,4.4,,,,5,,Yes,9.988021,,Predicted_from_lf_length,5
+H006,Nonsymptomatic,13.2,9.5,,,,6,,Yes,37.92498,,Predicted_from_lf_length,6
+H007,Nonsymptomatic,9.8,6.8,,,,7,,Yes,18.02833,,Predicted_from_lf_length,7
+H008,Nonsymptomatic,7.7,4.6,,,,8,,Yes,11.3887,,Predicted_from_lf_length,8
+H009,Nonsymptomatic,10.4,6.7,,,,9,,Yes,20.55655,,Predicted_from_lf_length,9
+H010,Nonsymptomatic,9.3,5.1,,,,10,,Yes,16.16069,,Predicted_from_lf_length,10
+H011,Nonsymptomatic,8,5.1,,,,11,,Yes,12.16106,,Predicted_from_lf_length,11
+H012,Nonsymptomatic,9.9,5.8,,,,12,,Yes,18.427,,Predicted_from_lf_length,12
+H013,Nonsymptomatic,8.2,5.6,,,,9,,Yes,12.70485,,Predicted_from_lf_length,13
+H014,Nonsymptomatic,9.2,6.2,,,,14,,Yes,15.81105,,Predicted_from_lf_length,14
+H015,Nonsymptomatic,12.4,9.7,,,,12,,Yes,31.83702,,Predicted_from_lf_length,15
+H016,Nonsymptomatic,10.4,5.8,,,,16,,Yes,20.55655,,Predicted_from_lf_length,16
+H017,Nonsymptomatic,14.8,10.3,,,,17,,Yes,53.81596,,Predicted_from_lf_length,17
+H018,Nonsymptomatic,9.9,6.9,,,,18,,Yes,18.427,,Predicted_from_lf_length,18
+H020,Nonsymptomatic,12,8.3,,,,20,,Yes,29.16997,,Predicted_from_lf_length,20
+H021,Nonsymptomatic,9.5,5.6,,,,21,,Yes,16.88333,,Predicted_from_lf_length,21
+H023,Nonsymptomatic,11.7,6.1,,,,23,,Yes,27.31735,,Predicted_from_lf_length,23
+H024,Nonsymptomatic,8.7,8.8,,,,24,,Yes,14.17311,,Predicted_from_lf_length,24
+H026,Nonsymptomatic,8.2,5.8,,,,26,,Yes,12.70485,,Predicted_from_lf_length,26
+H030,Nonsymptomatic,10.7,6.9,,,,20,,Yes,21.95066,,Predicted_from_lf_length,30
+H031,Nonsymptomatic,9.6,6.3,,,,31,,Yes,17.25668,,Predicted_from_lf_length,31
+H034,Nonsymptomatic,9.2,5.2,,,,34,,Yes,15.81105,,Predicted_from_lf_length,34
+H035,Nonsymptomatic,7.4,4.5,,,,35,,Yes,10.66539,,Predicted_from_lf_length,35
+H036,Nonsymptomatic,7.6,4.6,,,,36,,Yes,11.1423,,Predicted_from_lf_length,36
+H039,Nonsymptomatic,6.6,5.1,,,,26,,Yes,8.953315,,Predicted_from_lf_length,39
+H040,Nonsymptomatic,8.2,5,,,,40,,Yes,12.70485,,Predicted_from_lf_length,40
+H041,Nonsymptomatic,9.3,5.1,,,,41,,Yes,16.16069,,Predicted_from_lf_length,41
+H042,Nonsymptomatic,8.1,3.6,,,,42,,Yes,12.42998,,Predicted_from_lf_length,42
+H047,Nonsymptomatic,8.9,5.6,,,,47,,Yes,14.80688,,Predicted_from_lf_length,47
+H048,Nonsymptomatic,9.2,4.7,,,,48,,Yes,15.81105,,Predicted_from_lf_length,48
+H049,Nonsymptomatic,7.1,6.6,,,,49,,Yes,9.988021,,Predicted_from_lf_length,49
+H051,Nonsymptomatic,10.1,7.8,,,,51,,Yes,19.25098,,Predicted_from_lf_length,51
+H052,Nonsymptomatic,9.5,7.7,,,,51,,Yes,16.88333,,Predicted_from_lf_length,52
+H053,Nonsymptomatic,12.4,7.9,,,,51,,Yes,31.83702,,Predicted_from_lf_length,53
+H056,Nonsymptomatic,8.2,5.1,,,,56,,Yes,12.70485,,Predicted_from_lf_length,56
+H062,Nonsymptomatic,11.8,8,,,,62,,Yes,27.92144,,Predicted_from_lf_length,62
+H063,Nonsymptomatic,9.5,7.1,,,,62,,Yes,16.88333,,Predicted_from_lf_length,63
+H065,Nonsymptomatic,9,5.4,,,,65,,Yes,15.13431,,Predicted_from_lf_length,65
+H066,Nonsymptomatic,8.3,5.7,,,,66,,Yes,12.9858,,Predicted_from_lf_length,66
+H069,Nonsymptomatic,8.8,5,,,,69,,Yes,14.48653,,Predicted_from_lf_length,69
+H070,Nonsymptomatic,7.8,5.7,,,,70,,Yes,11.64054,,Predicted_from_lf_length,70
+H071,Nonsymptomatic,9.7,6.4,,,,71,,Yes,17.63829,,Predicted_from_lf_length,71
+H073,Nonsymptomatic,8.3,5.1,,,,73,,Yes,12.9858,,Predicted_from_lf_length,73
+H075,Nonsymptomatic,9.4,6,,,,75,,Yes,16.51806,,Predicted_from_lf_length,75
+H076,Nonsymptomatic,12.2,7.1,,,,76,,Yes,30.47433,,Predicted_from_lf_length,76
+H077,Nonsymptomatic,11.5,9,,,,77,,Yes,26.14812,,Predicted_from_lf_length,77
+H078,Nonsymptomatic,11.5,10.7,,,,78,,Yes,26.14812,,Predicted_from_lf_length,78
+H079,Nonsymptomatic,13.8,11.1,,,,79,,Yes,43.24342,,Predicted_from_lf_length,79
+H080,Nonsymptomatic,11.6,8.5,,,,80,,Yes,26.72634,,Predicted_from_lf_length,80
+H081,Nonsymptomatic,8.3,6.5,,,,80,,Yes,12.9858,,Predicted_from_lf_length,81
+H092,Nonsymptomatic,7.2,4.8,,,,36,,Yes,10.20889,,Predicted_from_lf_length,92
+H093,Nonsymptomatic,6.5,4.2,,,,42,,Yes,8.75961,,Predicted_from_lf_length,93
+H094,Nonsymptomatic,8.1,3.9,,,,40,,Yes,12.42998,,Predicted_from_lf_length,94
+H095,Nonsymptomatic,8.7,5.5,,,,41,,Yes,14.17311,,Predicted_from_lf_length,95
+H096,Nonsymptomatic,11.5,6.1,,,,16,,Yes,26.14812,,Predicted_from_lf_length,96
+H097,Nonsymptomatic,9.2,5.5,,,,16,,Yes,15.81105,,Predicted_from_lf_length,97
+H098,Nonsymptomatic,10.1,5.9,,,,16,,Yes,19.25098,,Predicted_from_lf_length,98
+H099,Nonsymptomatic,11.3,7.2,,,,16,,Yes,25.02892,,Predicted_from_lf_length,99
+H100,Nonsymptomatic,8.8,6.3,,,,16,,Yes,14.48653,,Predicted_from_lf_length,100
+H101,Nonsymptomatic,11.2,7.5,,,,101,,Yes,24.48742,,Predicted_from_lf_length,101
+H102,Nonsymptomatic,13.6,8.6,,,,101,,Yes,41.39251,,Predicted_from_lf_length,102
+H103,Nonsymptomatic,7,4.5,,,,101,,Yes,9.771929,,Predicted_from_lf_length,103
+H104,Nonsymptomatic,10.6,6.8,,,,20,,Yes,21.47575,,Predicted_from_lf_length,104
+H105,Nonsymptomatic,9.7,6.2,,,,20,,Yes,17.63829,,Predicted_from_lf_length,105
+H106,Nonsymptomatic,11.1,7.3,,,,20,,Yes,23.95764,,Predicted_from_lf_length,106
+H107,Nonsymptomatic,9.2,5.5,,,,20,,Yes,15.81105,,Predicted_from_lf_length,107
+H108,Nonsymptomatic,11.6,7.7,,,,5,,Yes,26.72634,,Predicted_from_lf_length,108
+H109,Nonsymptomatic,10.2,6.8,,,,9,,Yes,19.67668,,Predicted_from_lf_length,109
+H110,Nonsymptomatic,12.1,7,,,,9,,Yes,29.81502,,Predicted_from_lf_length,110
+H111,Nonsymptomatic,9.2,5.9,,,,6,,Yes,15.81105,,Predicted_from_lf_length,111
+H112,Nonsymptomatic,11.6,6.9,,,,112,,Yes,26.72634,,Predicted_from_lf_length,112
+H113,Nonsymptomatic,10.9,6.9,,,,113,,Yes,22.9322,,Predicted_from_lf_length,113
+H114,Nonsymptomatic,9.9,5.8,,,,114,,Yes,18.427,,Predicted_from_lf_length,114
+H115,Nonsymptomatic,11,7,,,,114,,Yes,23.43931,,Predicted_from_lf_length,115
+H116,Nonsymptomatic,10.4,5.5,,,,116,,Yes,20.55655,,Predicted_from_lf_length,116
+H117,Nonsymptomatic,8.2,6.3,,,,116,,Yes,12.70485,,Predicted_from_lf_length,117
+H118,Nonsymptomatic,9.8,5.8,,,,76,,Yes,18.02833,,Predicted_from_lf_length,118
+H119,Nonsymptomatic,8.4,4.6,,,,73,,Yes,13.27296,,Predicted_from_lf_length,119
+H120,Nonsymptomatic,6.4,4.9,,,,49,,Yes,8.570095,,Predicted_from_lf_length,120
+H121,Nonsymptomatic,9.4,4.7,,,,49,,Yes,16.51806,,Predicted_from_lf_length,121
+H122,Nonsymptomatic,7.2,6.3,,,,122,,Yes,10.20889,,Predicted_from_lf_length,122
+H123,Nonsymptomatic,8.4,5.4,,,,123,,Yes,13.27296,,Predicted_from_lf_length,123
+H124,Nonsymptomatic,8.4,3.6,,,,47,,Yes,13.27296,,Predicted_from_lf_length,124
+H125,Nonsymptomatic,8.3,5.1,,,,125,,Yes,12.9858,,Predicted_from_lf_length,125
+H126,Nonsymptomatic,8.4,5.8,,,,125,,Yes,13.27296,,Predicted_from_lf_length,126
+H127,Nonsymptomatic,9.1,6.4,,,,69,,Yes,15.46898,,Predicted_from_lf_length,127
+H128,Nonsymptomatic,10.8,7.4,,,,69,,Yes,22.43606,,Predicted_from_lf_length,128
+H129,Nonsymptomatic,10.3,5.9,,,,69,,Yes,20.1118,,Predicted_from_lf_length,129
+H130,Nonsymptomatic,7.5,5,,,,130,,Yes,10.90124,,Predicted_from_lf_length,130
+H131,Nonsymptomatic,6.3,3.9,,,,130,,Yes,8.384681,,Predicted_from_lf_length,131
+H132,Nonsymptomatic,6.9,4.2,,,,130,,Yes,9.560513,,Predicted_from_lf_length,132
+H133,Nonsymptomatic,11.1,6.7,,,,133,,Yes,23.95764,,Predicted_from_lf_length,133
+H134,Nonsymptomatic,9,4.7,,,,133,,Yes,15.13431,,Predicted_from_lf_length,134
+H135,Nonsymptomatic,8.9,6,,,,135,,Yes,14.80688,,Predicted_from_lf_length,135
+H136,Nonsymptomatic,7.5,5.6,,,,136,,Yes,10.90124,,Predicted_from_lf_length,136
+H137,Nonsymptomatic,9.2,6,,,,136,,Yes,15.81105,,Predicted_from_lf_length,137
+H138,Nonsymptomatic,11,7.9,,,,56,,Yes,23.43931,,Predicted_from_lf_length,138
+H139,Nonsymptomatic,10.7,7.1,,,,21,,Yes,21.95066,,Predicted_from_lf_length,139
