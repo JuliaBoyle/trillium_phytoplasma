@@ -64,55 +64,13 @@ seed_count <- read_sheet("https://docs.google.com/spreadsheets/d/1GVjfkGL2Zw95SN
 seed_sample <- read_sheet("https://docs.google.com/spreadsheets/d/1LAnaoIIN2YkGvapiwCqjUMaH5jZ6WNj4UQi-IdbSG8Q/edit?gid=0#gid=0", sheet = "Sheet1") %>% 
   left_join(seed_count)
 
-
-###seed sample data analysis (cor & reg)
-
-ggplot(data=seed_sample, aes(x=fruit_width, y=seed_count))+
-  geom_point()+
-  geom_smooth(method="lm")
-#width is slightly stronger based on cor.test
-
-ggplot(data=seed_sample, aes(x=fruit_length, y=seed_count))+
-  geom_point()+
-  geom_smooth(method="lm")
-
-cor.test(seed_sample$stem_diameter_mm, seed_sample$leaf_length_cm)
-#length & seed count = 0.8593
-#width & seed count = 0.8763
-#leaf length & seed count = 0.5890
-#stem diam & seed count = 0.6409
-
-reg1 <- glm(seed_count~fruit_width, data = seed_sample, family="poisson")
-summary(reg1)
-#significant <0.001
-
-reg2 <- lm(seed_count~fruit_length, data=seed_sample)
-summary(reg2)
-#significant <0.001
+cor.test(seed_sample$lf_length, seed_sample$seed_count) #leaf length & seed count = 0.575
 
 reg3 <- glm(seed_count~lf_length, data=seed_sample, family="poisson")
 summary(reg3)
-#significant <0.001 (not as sig as length & width)
 
-reg4 <- lm(seed_count~stem_diameter_mm, data=seed_sample)
-summary(reg4)
-#significant
-
-reg5 <- glm(seed_count~stem_diameter_mm + lf_length, data=seed_sample, family="poisson")
-summary(reg5)
-
-#trying to get predicted fruit size values from reg2
-predicted_length <- predict.glm(reg1, type="response")
-predicted_length2 <- predict(reg2)
+#trying to get predicted fruit size values from model
 predicted_length3 <- predict.glm(reg3, type="response")
-predicted_length4 <- predict(reg4)
-predicted_length5 <- predict.glm(reg5, type="response")
-
-r_squared <- sapply(list(reg1, reg2, reg3, reg4, reg5), function(model) summary(model)$r.squared)
-print(r_squared)
-#highest r2 is reg1 - so WIDTH is best predictor, reg3/leaf length is worst
-# are the r2 values for leaf & stem diam too low 
-  #to use to get a measurement for healthy indiv?
 
 seed_sample$predicted_count=predicted_length5
 
@@ -160,7 +118,7 @@ summary(p4)
 plot(ggpredict(p4, terms = c("DH_type")))
 pre4 <- ggpredict(p4, terms = "DH_type")
 
-ggplot(data = all_data, aes(x = DH_type, y = seed_count)) +
+seed_tril_plot<-ggplot(data = all_data, aes(x = DH_type, y = seed_count)) +
   geom_boxplot() +
   geom_jitter(alpha = 0.4, size = 0.8) +
   geom_pointrange(data = filter(pre3, x=="D"), aes(x = x, y = predicted, ymax = conf.high, ymin = conf.low, 
@@ -182,5 +140,29 @@ ggplot(data = all_data, aes(x = DH_type, y = seed_count)) +
 
 
 ##################################################################################################
+# Demography data from 2024 with more age classes
+#juvenile count= no. plants with 3 leaves but no flower
+#adult count = no. plants with 3 leaves and flower but no infection
+#infected adult count = no. plants with 3 leaves and flower and infection
+#one leaf count = no. plants at 1 leaf stage
 
-all_data %>% ggplot(aes(x=, y=))
+all_data<-all_data %>% mutate(Total_trilliums=(infected_adult+adult_count+juvenile_count+one_leaf_count+cot_count)) %>% mutate(Freq_infected_adult=infected_adult/(infected_adult+adult_count)) %>% mutate(count_3leaved=(juvenile_count+infected_adult+adult_count))
+all_data<-all_data %>% mutate(Ratio_one_to_repro=(one_leaf_count/(infected_adult+adult_count)))
+all_data<-all_data %>% mutate(Ratio_one_to_three=(one_leaf_count/(infected_adult+adult_count+juvenile_count)))
+all_data<-all_data %>% mutate(Ratio_veg_to_repro=(juvenile_count/(infected_adult+adult_count)))
+#all_data$Freq_infected_adult[is.na(all_data$Freq_infected_adult)] <- 0 
+#all_data$Freq_infected_adult[is.nan(all_data$Freq_infected_adult)] <- 0 
+all_data<-all_data %>% mutate(across(where(is.numeric), \(x) ifelse(is.nan(x), NA, x)))
+all_data$Ratio_one_to_repro[is.infinite(all_data$Ratio_one_to_repro)] <- NA
+all_data$Ratio_veg_to_repro[is.infinite(all_data$Ratio_veg_to_repro)] <- NA
+
+cor.test(all_data$Freq_infected_adult, all_data$Ratio_one_to_repro)
+library(bestNormalize)
+hist(predict(bestNormalize(all_data$Ratio_one_to_repro)))
+demography2024_one<-ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_repro))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("1-leaved:flowering ratio")+xlab("Proportion of flowering trillium infected")+labs(subtitle = "r = -0.082, p = 0.336")
+
+cor.test(all_data$Freq_infected_adult, all_data$Ratio_veg_to_repro)
+demography_2024_veg<-all_data %>% ggplot(aes(Freq_infected_adult, Ratio_veg_to_repro))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("3-leaved non-flowering:flowering ratio")+xlab("Proportion of flowering trillium infected")+ggtitle("2024")+labs(subtitle = "r = -0.079, p = 0.352")
+
+cor.test(all_data$Freq_infected_adult, all_data$Ratio_one_to_three)
+ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_three))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("1-leaved:3-leaved ratio")+xlab("Proportion of flowering trillium infected")+labs(subtitle = "r = -0.023, p = 0.784")

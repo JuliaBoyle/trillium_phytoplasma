@@ -162,7 +162,8 @@ plot_grid(fig2A,fig2B,fig2C, fig2D, labels=c("A", "B", "C", "D"))  #10 by 10
 ```{r}
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio)
 demography2023<-trillium %>% 
-  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("Non-flowering:flowering ratio")+labs(subtitle = "r = 0.103, p = 0.412")
+  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("3-leaved non-flowering:flowering ratio")+labs(subtitle = "r = 0.103, p = 0.412")+ggtitle("2023")
+demography2023
 ```
 
 ## Trait data
@@ -236,7 +237,9 @@ head(seed)
 seed$seed_count_round<-round(seed$seed_count)
 seed<-seed %>% mutate(Full_treatment=paste(Infection_status, Seed_count_real_or_predicted, sep = '_'))
 
-seed_tril_plot<-seed %>% drop_na(seed_count) %>%  ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("goldenrod", "darkgrey"),name="Seed count", labels=c("Predicted from leaf length", "Real"))+theme(legend.position="top")
+seed %>% drop_na(seed_count) %>%  ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("goldenrod", "darkgrey"),name="Seed count", labels=c("Predicted from leaf length", "Real"))+theme(legend.position="top")
+
+seed_tril_plot<-seed %>% drop_na(seed_count) %>%filter(Full_treatment!="Nonsymptomatic_Real") %>%   ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Predicted from leaf length", "Real"))+theme(legend.position="top")
 
 seed %>%filter(Paired_data_plants=='Yes'& Seed_count_real_or_predicted=='Real') %>%  drop_na(seed_count)%>% group_by(Infection_status) %>% tally() #only 81 plants had real seed count numbers
 seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% filter(seed_count==0) %>% tally()
@@ -244,19 +247,38 @@ seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% fil
 seed_comparison1<-seed %>% filter(Paired_data_plants=='Yes'&Infection_status=="Symptomatic")
 seed_comparison2<-seed %>% filter(Full_treatment=="Symptomatic_Real" | Full_treatment== "Nonsymptomatic_Predicted_from_lf_length")
 hist((seed_comparison2$seed_count))
-summary(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1)) #comparing infected observed vs. expected seed number based on size
-summary(glmer.nb(round(seed_count)~Infection_status+(1|pair_number), data=seed_comparison2,   control = glmerControl("bobyqa"))) #comparing the focal paired plants, actual infected and predicted seed count of healthy paired plant
+Anova(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1), type=3) #comparing infected observed vs. expected seed number based on size
+(Anova(glmer.nb(round(seed_count)~Infection_status+(1|pair_number), data=seed_comparison2, control = glmerControl("bobyqa")), type=3)) #comparing the focal paired plants, actual infected and predicted seed count of healthy paired plant
+
+#try quasipoisson if overdispersed
+plyr::ddply(seed_comparison2, c("Infection_status"), summarise,
+                  N=sum(!is.na(seed_count)),
+             mean = mean ((seed_count), na.rm=TRUE),
+             sd = sd (seed_count,na.rm=TRUE),
+             se = sd/sqrt(N))
+((5.851852		- 18.525928	)/18.525928)*100
+plyr::ddply(seed_comparison1, c("Seed_count_real_or_predicted"), summarise,
+                  N=sum(!is.na(seed_count)),
+             mean = mean ((seed_count), na.rm=TRUE),
+             sd = sd (seed_count,na.rm=TRUE),
+             se = sd/sqrt(N))
+((5.851852		- 16.522099	)/16.522099)*100
 ```
 
 ```{r}
-plot_grid(seed_tril_plot, demography2023, labels=c("A", "B"))
+plot_grid(seed_tril_plot, demography2023, labels=c("A", "B")) #5 by 8 landscape for ellie's version
+#5 by 10 for the above version
+
+plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B"))
+
+#if use demography plots from 2024 data, make them in other trillium code doc
+plot_grid(seed_tril_plot, demography2023, demography2024_one, demography_2024_veg, labels="AUTO") #8 by 10
 ```
 
 
 # iNaturalist data
 ```{r}
 #install.packages('geodata')
-
 library(maps)
 library(mapdata)
 library(ggmap)
@@ -264,19 +286,17 @@ library(RColorBrewer)
 library(raster)
 library(scales)
 library(CoordinateCleaner)
-#library(maptools)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(geodata)
 library(sf)
 library(plyr)
 library(spData)
-library(spDataLarge)
 library(tidyterra)
 library(terra)
-#library(rnaturalearthhires)
 library(tmap) 
 library(predicts)
+library(tidyverse)
 ```
 
 ```{r}
@@ -311,6 +331,7 @@ inat_cleaned%>% filter( field.phytoplasma.infection.=="Yes") #550
 inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #526 after filtering out stuff with clean_coordinates
 ```
 ```{r}
+#old code to do the above cleaning of users
 set.seed(1)
 overrepresented_users<-inat_clean %>% group_by(user_login) %>% tally() %>% filter(n>15)
 overrepresented_samples<-subset(inat_clean, user_login %in% overrepresented_users$user_login)
@@ -332,14 +353,8 @@ inat_clean %>% filter(observed_on>'2020-01-01') #23405
 23405/28390
 ```
 
-But maybe also try having size of bubbles indicating number of infected https://stackoverflow.com/questions/60021868/producing-heat-map-over-geo-locations-in-r 
-
-TO DO:
--Turn lat long into equal area projection (eg. 1km by 1km squares), so we have gridded cells. Look at proportion infected to total observations in each cell.
--occupancy model for space: different number of samples per grid, accounting for them
--see what predicts infection?? worldclim data or crop cover? human population density? trillium density? Vector density? ****
-
 ## Extracting coordinate data
+Run this everytime you load R because spatrasters do not save with R enviro
 ```{r}
 dir.create(path = "data") 
 dir.create(path = "output")
@@ -361,6 +376,7 @@ plot(bioclim_data[[1]])
 plot(bioclim_data[[12]])
 
 bioclim_extract <- terra::extract(x = bioclim_data, y = as.matrix(inat_clean[, c("longitude", "latitude")])) # No need for an ID column
+# I GET 41 OBSERVATIONS WITH NAS FROM BIOCLIM DATA- WHY???
 # Add the point and climate datasets together 
 points_climate <- cbind(inat_clean, bioclim_extract)
 
@@ -370,18 +386,21 @@ plot(crop_data[[1]])
 cropdata_extract<- terra::extract(x = crop_data, y = as.matrix(inat_clean[, c("longitude", "latitude")]))
 points <- cbind(points_climate, cropdata_extract)
 
-stonefruit<-crop_monfreda(crop="stonefruitnes", var="area_ha",  path = "data/") #download failed?
+#stonefruit<-crop_monfreda(crop="stonefruitnes", var="area_ha",  path = "data/") #download failed?
 
 footprint<-footprint(year=2009, path = "data/")
 footprint_crop<- crop(x = footprint, y = sample_extent) 
 plot(footprint_crop[[1]])
 footprint_extract<- terra::extract(x = footprint_crop, y = as.matrix(inat_clean[, c("longitude", "latitude")]))
+footprint_extract<-rename(footprint_extract, footprint = `wildareas-v3-2009-human-footprint`
+)
 points<-cbind(points, footprint_extract)
 
 bioclim_data
 footprint_crop
 crop_data
 geo_data<-c(bioclim_data, footprint_crop, crop_data)
+geo_data_test<-geo_data
 ```
 
 ##Density map
@@ -398,10 +417,6 @@ area_fishnet_grid = st_make_grid(dat_ea, c(5e4, 5e4), what = "polygons", square 
 fishnet_grid_sf = st_sf(area_fishnet_grid) %>%
   # add grid ID
   mutate(grid_id = 1:length(lengths(area_fishnet_grid)))
-
-# Quick look at the grid
-mapview(fishnet_grid_sf)
-
 # Assign observations to grid cells
 grid_assignments = st_intersection(fishnet_grid_sf, dat_ea)
 
@@ -426,14 +441,6 @@ tril_b<-ggplot() +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()
 
-ggplot() +
-  geom_sf(data = world, fill = "white") +
-  geom_sf(data = lakes, color = "grey", fill = "grey") +
-  geom_sf(data = freqs_with_polys, aes(fill = n_infected), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white", "#CCFF99", "darkgreen"), values = c(0,0.000001,1), name="Infected observations") +
-  coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()
-
 tril_a<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
@@ -445,6 +452,41 @@ tril_a<-ggplot() +
 plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1) #10 by 7 portrait
 trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1)
 ```
+##Moran’s I analysis
+https://mgimond.github.io/simple_moransI_example/
+```{r}
+library(sf)
+library(spdep)
+library(tmap)
+nb <- poly2nb(freqs_with_polys, queen=TRUE)
+lw <- nb2listw(nb, style="W", zero.policy=TRUE)
+inc.lag <- lag.listw(lw, freqs_with_polys$n_infected)
+plot(inc.lag ~ freqs_with_polys$n_infected, pch=16, asp=1)
+M1 <- lm(inc.lag ~ freqs_with_polys$n_infected)
+abline(M1, col="blue")
+coef(M1)[2] #0.4216945
+#this slope is Morans I: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
+#a positive Moran’s I value suggests clustering whereas a negative Moran’s I value suggests dispersion
+inc.lag.freq <- lag.listw(lw, freqs_with_polys$freq_infected)
+plot(inc.lag.freq ~ freqs_with_polys$freq_infected, pch=16, asp=1)
+M1.freq <- lm(inc.lag.freq ~ freqs_with_polys$freq_infected)
+abline(M1.freq, col="blue")
+coef(M1.freq)[2] #0.1072854
+
+moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4302413, infections are pretty clustered in space
+moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1082928
+moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3096669
+
+MC.ninfec<- moran.mc(freqs_with_polys$n_infected, lw, nsim=999, alternative="greater")
+MC.ninfec
+plot(MC.ninfec)
+MC.freq<- moran.mc(freqs_with_polys$freq_infected, lw, nsim=999, alternative="greater")
+MC.freq
+plot(MC.freq)
+MC.n<- moran.mc(freqs_with_polys$n, lw, nsim=999, alternative="greater")
+MC.n
+plot(MC.n)
+```
 
 ##Models
 what seems to cause infection?
@@ -453,39 +495,221 @@ as.data.frame(grid_assignments)
 as.data.frame(freq_per_poly)
 
 inat_grid<-merge(as.data.frame(grid_assignments), as.data.frame(freq_per_poly), by.x="grid_id", by.y="grid_id")
-inat_grid<-inat_grid %>% select(grid_id, id, n, n_infected, freq_infected)
+inat_grid<-inat_grid %>% dplyr::select(grid_id, id, n, n_infected, freq_infected)
 
 inat_full<-merge(inat_grid, points, by.x="id", by.y="id")
-#inat_full<-rename(inat_full, annual_mean_temp = wc2.1_30s_bio_1, mean_diurnal_range=wc2.1_30s_bio_2, isothermality=wc2.1_30s_bio_3, temp_seasonality=wc2.1_30s_bio_4, max_temp_warmestmonth=wc2.1_30s_bio_5, min_temp_coldestmonth=wc2.1_30s_bio_6, temp_annual_range=wc2.1_30s_bio_7, mean_temp_wettestquart=wc2.1_30s_bio_8, mean_temp_driestquart=wc2.1_30s_bio_9, mean_temp_warmestquart=wc2.1_30s_bio_10, mean_temp_coldestquart=wc2.1_30s_bio_11, annual_precip=wc2.1_30s_bio_12, precip_wettestmonth=wc2.1_30s_bio_13, precip_driestmonth=wc2.1_30s_bio_14, precip_seasonality=wc2.1_30s_bio_15, precip_wettestquarter=wc2.1_30s_bio_16, precip_driestquart=wc2.1_30s_bio_17, precip_warmestquart=wc2.1_30s_bio_18, precip_coldestquart=wc2.1_30s_bio_19)
-
-summary(glmer(as.numeric(infected)~n+scale(annual_mean_temp)+scale(max_temp_warmestmonth)+scale(min_temp_coldestmonth)+scale(annual_precip)+scale(precip_wettestmonth)+scale(precip_driestmonth)+scale(cropland)+scale(`wildareas-v3-2009-human-footprint`)+(1|user_login), family=binomial, data=inat_full)) #adding user login as a random effect makes this take a looooong time
-
-summary(glm(as.numeric(infected) ~ wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, data = inat_full, family = binomial))
-```
-SEM?
-```{r}
 inat_full$infected<-as.numeric(inat_full$infected)
-inat_full$n<-as.numeric(inat_full$n)
-inat_full_gridcells<-inat_full %>% group_by(grid_id) %>% 
-  slice_sample(n = 1, replace = FALSE)
-hist(inat_full_gridcells$n)
+inat_full$footprint<-inat_full$`wildareas-v3-2009-human-footprint`
+inat_full$Year<-substring(inat_full$observed_on,1,4)
+str(inat_full)
+```
+```{r}
+#add total trillium number as a layer to the raster 
+r <- rast(xmin=-100.875, xmax=-62.125, ymin=31.125, ymax=49.875, ncols=4650, nrows=2250, crs = crs(geo_data_test))
+# you need to provide a function 'fun' for when there are multiple points per cell
+trillium_number <- rasterize(as.matrix((inat_full %>% select(longitude, latitude,n))[, 1:2]), r, as.matrix((inat_full %>% select(longitude, latitude,n))[,3]), fun=sum)
+plot(trillium_number_resampled)
+trillium_number_resampled <- resample(trillium_number, geo_data_test)
+names(trillium_number_resampled)<-"n"
+geo_data_test<-c(geo_data_test, trillium_number_resampled)
 
-summary(glm.nb(n~ wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, data=inat_full))
+#add lat and long as a layer to the raster??
+latitude <- rasterize(as.matrix((inat_full %>% select(longitude, latitude))[, 1:2]), r, as.matrix(inat_full$latitude), fun=mean)
+latitude<- resample(latitude, geo_data_test)
+names(latitude)<-"latitude"
+geo_data_test<-c(geo_data_test, latitude)
+longitude <- rasterize(as.matrix((inat_full %>% select(longitude, latitude))[, 1:2]), r, as.matrix(inat_full$longitude), fun=mean)
+names(longitude)<-"longitude"
+longitude<- resample(longitude, geo_data_test)
+geo_data_test<-c(geo_data_test, longitude)
+plot(longitude)
+```
 
+###GAM
+determine which variables to keep in model (reduce collinearity)
+```{r}
+library(usdm)
+s(n)+s(wc2.1_30s_bio_1)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_3)+s(wc2.1_30s_bio_4)+s(wc2.1_30s_bio_5)+s(wc2.1_30s_bio_6)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_11)+s(wc2.1_30s_bio_12)+s(wc2.1_30s_bio_13)+s(wc2.1_30s_bio_14)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_16)+s(wc2.1_30s_bio_17)+s(wc2.1_30s_bio_18)+s(wc2.1_30s_bio_19)+s(cropland)+s(footprint)
+
+vifcor(inat_full[53:73], th=0.9)
+#this would exclude wc2.1_30s_bio_17, wc2.1_30s_bio_6, wc2.1_30s_bio_16, wc2.1_30s_bio_11, wc2.1_30s_bio_10, wc2.1_30s_bio_19, wc2.1_30s_bio_7, wc2.1_30s_bio_12
+
+s(n, k=50)+s(wc2.1_30s_bio_1)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_3)+s(wc2.1_30s_bio_4)+s(wc2.1_30s_bio_5)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_13)+s(wc2.1_30s_bio_14)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200)
+
+vifstep(inat_full[53:73])
+#this would exclude wc2.1_30s_bio_6, wc2.1_30s_bio_11, wc2.1_30s_bio_1, wc2.1_30s_bio_3, wc2.1_30s_bio_4, wc2.1_30s_bio_17, wc2.1_30s_bio_12, wc2.1_30s_bio_5, wc2.1_30s_bio_16, wc2.1_30s_bio_19, wc2.1_30s_bio_14, wc2.1_30s_bio_13 
+
+s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200)
+```
+
+Run models
+```{r}
+library(mgcv)
+#https://m-clark.github.io/generalized-additive-models/appendix.html
+#https://r.qcbs.ca/workshop08/book-en/gam-model-checking.html
+#https://noamross.github.io/gams-in-r-course/     <-----THIS ONE IS GREAT!!!
+# +s(latitude,longitude,bs="sos",m=2,k=200) #Spherical version
+#+s(latitude,longitude,bs="gp",m=2,k=200) #gaussian version
+gam_tril_allsmooth<-gam(infected ~ s(n, k=50) +s(wc2.1_30s_bio_1) +s(wc2.1_30s_bio_4) +s(wc2.1_30s_bio_5) +s(wc2.1_30s_bio_6) +s(wc2.1_30s_bio_12) +s(wc2.1_30s_bio_13) +s(wc2.1_30s_bio_14) +s(wc2.1_30s_bio_15) +s(cropland) +s(footprint) +s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=inat_full)
+
+#model 1
+summary(gam_tril_allsmooth)
+k.check(gam_tril_allsmooth) #if edf is too close to k, gives sig value. we want k-index near 1 and nonsig p. k controls wiggliness
 set.seed(1)
-modelList_trillium <-  psem(
-  glm(infected~n+wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, family=binomial, data=inat_full),
-  glm.nb(n~ wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, data=inat_full)
- )
-summary(modelList_trillium)
-fisherC(modelList_trillium) 
-modelList_trillium_coefs<-as.data.frame(coefs(modelList_trillium))
-modelList_trillium_coefs<-modelList_trillium_coefs[,c(2,1, 3:8)]
-modelList_trillium_coefssig<-modelList_trillium_obs_coefs %>% filter(P.Value<0.05)
-modelList_trillium_coefssig
+gam.check(gam_tril_allsmooth)
+plot(gam_tril_allsmooth, residuals = TRUE, pch = 1, all.terms = TRUE, shade = TRUE, shift = coef(gam_tril)[1])
+concurvity(gam_tril_allsmooth, full = TRUE) #if worst case has values over 0.8 then you have problem similar to colinearity but with parabola-ness. Use full=F to find out the offenders
+concurvity(gam_tril_allsmooth, full = F)
+rpred <- predict(geo_data, gam_tril_allsmooth)#but maybe add one layer with tril n. eg. rstack <- stack(rx1, rx2, rzeros)/ names(rstack) <- c("x1", "x2", "sitef")
+vis.gam(gam_tril_allsmooth, view = c("latitude", "longitude"), plot.type = "contour", too.far = 0.05)#means it won't extrapolate more than 5% into untested combinations
+
+#model 2
+set.seed(1)
+gam_vifstep<-gam(infected ~ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18, k=30)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=inat_full)
+summary(gam_vifstep)
+gam.check(gam_vifstep)
+vis.gam(gam_vifstep, view = c("longitude", "latitude"), plot.type = "contour", too.far = 0.05, color="topo")#means it won't extrapolate more than 5% into untested combinations
+plot(gam_vifstep, residuals = TRUE, pch = 1, all.terms = TRUE, shade = TRUE, shift = coef(gam_tril)[1])
 ```
 
 Species distribution model?
+https://jcoliver.github.io/learn-r/011-species-distribution-models.pdf 
+```{r}
+inat_1<-merge(inat_grid, points, by.x="id", by.y="id")
+inat_1 = subset(inat_1, select = -c(.val,.equ, .zer, .cen, .inst, .dpl, .summary) )
+# Create vector indicating fold for making a training dataset 
+fold <- folds(x = inat_1, k = 5, by = inat_full$infected) #five folds so that we can test on 20% of the data
+testing <- inat_1[fold == 1, ] 
+training <- inat_1[fold != 1, ]
+training$footprint<-as.numeric(training$footprint)
+training$infected<-as.numeric(training$infected)
+str(training)
+# Build a model using training data 
+gam_training<-gam(infected ~ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18, k=30)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=training)
+summary(gam_training)
+
+which(is.na(training$footprint))
+names(geo_data_test)
+# Get predicted values from the model 
+gam_predict <- predict(geo_data_test, gam_training, type = "response") #geo_data but with trillium number and lat and long
+# Print predicted values 
+plot(gam_predict)
+# Use testing data for model evaluation 
+gam_eval <- pa_evaluate(p = testing[testing$infected == 1, ], a = testing[testing$infected == 0, ], model = gam_training, type = "response")
+# Determine minimum threshold for "presence" 
+gam_threshold <- gam_eval@thresholds$max_spec_sens
+```
+```{r}
+world = ne_countries(scale = "large", returnclass = "sf", continent = "north america")
+lakes = ne_download(scale = "medium", type = "lakes", category = "physical")
+
+tril_c<-ggplot() +
+   geom_spatraster(data = (gam_predict> gam_threshold), aes(fill = lyr1))+#Only plot areas where probability of occurrence is greater than the threshold 
+  geom_sf(data = world, fill="NA") +
+  geom_sf(data = lakes, color = "grey", fill = "grey") +
+  coord_sf(xlim =c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
+  theme_bw()+scale_fill_manual(name="Suitability for phytoplasma", values=c("NA","red"), na.value="NA")+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), shape=3, size=1,alpha=0.3)
+#the map we have drawn presents a categorical classification of whether a particular point on the landscape will be suitable or not for the species of interest.
+```
+
+
+### INLA
+https://ourcodingclub.github.io/tutorials/inla/
+```{r}
+#if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
+#install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+library(INLA); library(ggregplot); library(RColorBrewer)
+head(inat_full)
+
+phen <- c("longitude", "latitude") # Base columns with spatial information we'll need
+
+resp <- "infected" # Response variable
+
+covar <- c("n","wc2.1_30s_bio_1",  "wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_5","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_11","wc2.1_30s_bio_12","wc2.1_30s_bio_13","wc2.1_30s_bio_14","wc2.1_30s_bio_15","wc2.1_30s_bio_16","wc2.1_30s_bio_17","wc2.1_30s_bio_18","wc2.1_30s_bio_19","cropland", "footprint")
+
+# Specify the formula
+f0.1 <- as.formula(paste0(resp, " ~ ", # Response first
+                          paste(covar, collapse = " + ") # Collapse the vector of covariates
+))
+
+# Run the model 
+IM0.1  <- inla(f0.1, 
+               family = "binomial", # Specify the family. Can be a wide range (see r-inla.org).
+               data = inat_full) # Specify the data
+summary(IM0.1)
+Efxplot(list(IM0.1)) #There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+
+#Perform model selection by removing covariates one by one and seeing how this changes model fit according to the model’s Deviance Information Criterion
+#library(beepr)
+#library(MCMCglmm)
+ModelSel <- INLAModelSel(resp, covar, Family="binomial", Data=inat_full)
+#[1] "Losing wc2.1_30s_bio_16" "Run 2" "Losing wc2.1_30s_bio_1" "Run 3""Losing wc2.1_30s_bio_18" "Run 4" "Losing wc2.1_30s_bio_17" "Run 5" "Losing wc2.1_30s_bio_13" "Run 6""Losing wc2.1_30s_bio_11" "Run 7" "Losing n" "Run 8" "Losing wc2.1_30s_bio_5" "Run 9" "Losing wc2.1_30s_bio_15" "Run 10" #######it removed 9, but I want to keep n in the model
+Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_12","wc2.1_30s_bio_14","wc2.1_30s_bio_19","cropland", "footprint")
+#Finalcovar <- ModelSel$Removed[[length(ModelSel$Removed)]]
+f1 <- as.formula(paste0(resp, " ~ ", 
+                        paste(Finalcovar, collapse = " + "))) 
+
+IM1 <- inla(f1,
+            family = "binomial",
+            data = inat_full,
+            control.compute = list(dic = TRUE)) 
+summary(IM1)
+Efxplot(list(IM1))
+##########################################################################
+which(is.na(inat_full$wc2.1_30s_bio_1)) #41 uninfected trillium near quebec and montreal don't have associated bioclim data for some reason. we need to exclude them for INLA
+sum(is.na(inat_full$wc2.1_30s_bio_1))
+inat_full[which(is.na(inat_full$wc2.1_30s_bio_1)),]
+inat_full_complete = inat_full[complete.cases(inat_full[53:73]),]
+##########################################################################
+#incorporating space
+Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # using the sampling locations
+MeshB <- inla.mesh.2d(Locations, max.edge = c(20, 40)) #bigger triangles for data exploration
+MeshC <- inla.mesh.2d(Locations, max.edge = c(10, 20)) #smaller triangles- use smaller triangles for publication
+Mesh <- MeshB
+plot(MeshB)
+plot(MeshC)
+points(Locations, col = "red", pch = 2)
+# Making the A matrix
+HostsA <- inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
+Hosts.spde = inla.spde2.pcmatern(mesh = Mesh, prior.range = c(10, 0.5), prior.sigma = c(.5, .5)) # Making SPDE
+w.Host <- inla.spde.make.index('w', n.spde = Hosts.spde$n.spde) # making the w
+
+# Making the model matrix #### 
+X0 <- model.matrix(as.formula(paste0("~ -1 +", paste(Finalcovar, collapse = "+"))), data = inat_full_complete) # make the model matrix using the final model selection formula without a response variable.
+X <- as.data.frame(X0)
+# Making the stack ####
+N <- nrow(inat_full_complete)
+StackHost <- inla.stack(
+  data = list(y = inat_full_complete[,resp]), # specify the response variable
+  A = list(1,1,HostsA), # Vector of Multiplication factors for random and fixed effects  #put as many 1s as there are fixed and random effects in the effects() below            
+  effects = list(
+    Intercept = rep(1, N), # specify the manual intercept!
+    X = X, # attach the model matrix
+    # insert vectors of any random effects (none here)
+    w = w.Host)) # attach the w 
+#Running the model
+f1 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "))) #version only fixed effects
+f3 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "), " + f(w, model = Hosts.spde)")) #version with space SPDE random effect
+IM1 <- inla(f1, # Base model (no random effects)
+            family = "binomial",
+            data = inla.stack.data(StackHost),
+            control.compute = list(dic = TRUE),
+            control.predictor = list(A = inla.stack.A(StackHost)))
+IM3 <- inla(f3, # SPDE random effect 
+            family = "binomial",
+            data = inla.stack.data(StackHost),
+            control.compute = list(dic = TRUE),
+            control.predictor = list(A = inla.stack.A(StackHost)))
+SpatialHostList <- list(IM1, IM3)
+
+ggField(IM3, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Blues") #Plotting the spatial field 
+sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
+INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
+```
+
+
+###Species distribution model?
 https://jcoliver.github.io/learn-r/011-species-distribution-models.pdf 
 ```{r}
 inat_1<-merge(inat_grid, points, by.x="id", by.y="id")
@@ -498,6 +722,10 @@ training <- inat_1[fold != 1, ]
 # Build a model using training data 
 glm_model <- glm(as.numeric(infected) ~ wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, data = training, family = binomial)
 summary(glm_model)
+
+tril_num<-rast(nrows=inat_full$latitude, ncols=inat_full$longitude, vals=inat_full$n)
+geo_data_test<-geo_data
+add(geo_data_test) <- tril_num
 
 # Get predicted values from the model 
 glm_predict <- predict(geo_data, glm_model, type = "response") #should I incorporate trillium n into this?
@@ -522,9 +750,6 @@ tril_c<-ggplot() +
 ```
 
 ```{r}
-tril_a
-tril_b
-tril_c
 plot_grid(trilab, tril_c, labels=c("","C"), ncol=2)
 ```
 
@@ -554,24 +779,6 @@ range<-NAmap+ geom_point(data=inat_clean_corrected, aes(x=longitude, y=latitude)
 infections<-NAmap+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), fill="yellowgreen",shape=21, size=1,alpha=0.3)+labs(x = "Longitude",y = "Latitude",title= "Infected *T. grandiflorum* observations") +theme(title = ggtext::element_markdown())
 rangemap<-plot_grid(range,infections, labels=c("A", "B"))
 ggsave2("phytoplasma_rangemap.png", rangemap, dpi=600, width=10, height=8)
-```
-
-tmap version
-https://edzer.github.io/sdsr_exercises/08.html
-```{r}
-us_states_map = tm_shape(us_states, crs = "EPSG:9822") + 
-  tm_polygons() + 
-  tm_layout(frame = FALSE)
-
-
-ne = ne_countries(returnclass = "sf")
-ne |> filter(admin == "Canada") -> canada
-ca_eqc = st_transform(canada,"EPSG:9822")
-ne |> filter(admin == "United States of America") -> us
-us_eqc = st_transform(us,"EPSG:9822")
-plot(us_eqc)
-
-nz_elev = rast(system.file("raster/nz_elev.tif", package = "spDataLarge"))
 ```
 
 sf version with ggplot
@@ -643,14 +850,3 @@ observation_coords_geo <- st_as_sf(x = inat_clean_corrected,
            coords = c("longitude", "latitude"),
            crs = "EPSG:9822")
 ```
-density
-```{r}
-library(spatstat)
-infection_ppp <- as.ppp(infection_coords_geo, W = as.owin(canada_geo))
-# Check to see if it worked
-plot(infection_ppp)
-infection_ppp_stars <- stars::st_as_stars(density(infection_ppp, dimyx = 300))
-```
-
-
-
