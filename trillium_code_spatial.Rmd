@@ -366,8 +366,22 @@ ggregplot::Efxplot(IM3)+ggtitle("INLA spatial model")
 saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
 saveRDS(IM3, paste0("output/","IM3",".rds"))
 ```
-https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
+```{r}
+usa <- map_data("state")
+canada <- map_data("worldHires","Canada")
+ggregplot::ggField(IM3, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Blues")+ geom_polygon(data = usa, 
+                                 aes(x=long, y = lat, group = group), 
+                                 fill = NA, 
+                                 color="black") +
+    geom_polygon(data = canada, aes(x=long, y = lat, group = group), 
+                 fill = NA, color="black")+
+    coord_fixed(xlim = c(-100, -65),  ylim = c(30, 55))+xlab("Longitude")+ylab("Latitude")
+```
+
+
 Making predictions
+https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
 "To produce predictions using INLA, we need to generate a dataset (with attached coordinates on the locations we wish to predict to) and attach a series of missing observation to it (coded as NA in R). When the missing observations are in the response variable, INLA automatically computes the predictive distribution of the corresponding linear predictor and fitted values.
 Using INLA syntax is possible to generate model predictions by fitting a stack where the response variable is set as NAs, and then join this stack with the estimation stack (which is similar to what we have used so far). Then we can extract the values of the predicted response variable and use the inla.mesh.projector() function to project these values on the mesh vertices (like we have been doing when plotting the GRF earlier on)."
 ```{r}
@@ -398,8 +412,8 @@ str(pred.grid)
 MeshPred <- inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1)
 plot(MeshPred)
 
-spde.pred <- inla.spde2.matern(mesh = MeshPred,
-                               alpha = 2)
+#spde.pred <- inla.spde2.matern(mesh = MeshPred,alpha = 2)
+spde.pred = INLA::inla.spde2.pcmatern(mesh = MeshPred, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
 
 s.index.p <- inla.spde.make.index(name = "sp.field.pred",
                                   n.spde = spde.pred$n.spde)
@@ -411,24 +425,25 @@ A_pred <- inla.spde.make.A(mesh = MeshPred)
 
 StackEst <- INLA::inla.stack(
   data = list(y = inat_full_complete[,resp]), # specify the response variable
-  A = list(1,1,HostsA), # Vector of Multiplication factors for random and fixed effects  #put as many 1s as there are fixed and random effects in the effects() below            
+  A = list(1,1,HostsA), 
   effects = list(
-    Intercept = rep(1, N), # specify the manual intercept!
-    X = X, # attach the model matrix
-    # insert vectors of any random effects (none here)
-    w = w.Host),tag = "Est")
+    Intercept = rep(1, N), 
+    X = X,
+    s.index.p),tag = "Est")
 
 stackPred <- inla.stack(data = list(y = NA),  # NAs in the response variable  
-                        A = list(1,1,A_pred),
-                        effects = list( Intercept = rep(1, N), X = X,  w = w.Host), tag = "Pred")
+                        A = list(A_pred),
+                        effects = list(c(list(Intercept = 1),  s.index.p)), tag = "Pred")
 
 StackJoin <- inla.stack(StackEst, stackPred)
+
+f4 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "), " + f(sp.field.pred, model = spde.pred)"))
 #Then we can specify the formula and run the model as usual (using the joint stack).
-Mod_Pred<-INLA::inla(f3, # SPDE random effect 
+Mod_Pred<-inla(f4, 
             family = "binomial",
-            data = inla.stack.data(StackJoin),
+            data = inla.stack.data(StackJoin, , spde = spde.pred),
             control.compute = list(dic = TRUE),
-            control.predictor = list(A = INLA::inla.stack.A(StackJoin),  compute = T))
+            control.predictor = list(A = inla.stack.A(StackJoin),  compute = T))
 #We need to extract the index of the data from the prediction part of the stack (using the tag “Pred” we assigned to the stack) and use it to select the relevant posterior mean and sd for the predicted response variable. Then we use the inla.mesh.projector() function to calculate the projection from the Mesh to the grid we created (pred.grid).
 index.pred <- inla.stack.index(StackJoin, "Pred")$data
 
