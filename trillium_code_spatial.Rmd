@@ -26,6 +26,7 @@ library(tmap)
 library(predicts)
 library(tidyverse)
 library(cowplot)
+sessionInfo()
 ```
 
 ```{r}
@@ -285,6 +286,7 @@ tril_c<-ggplot() +
 https://ourcodingclub.github.io/tutorials/inla/
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
 ```{r}
+set.seed(1)
 #install.packages("devtools")
 #if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
 #install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
@@ -353,18 +355,19 @@ IM3 <- INLA::inla(f3, # SPDE random effect
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
             control.predictor = list(A = INLA::inla.stack.A(StackHost)))
-SpatialHostList <- list(IM1, IM3)
+IM3.r<-inla.rerun(IM3)
+SpatialHostList <- list(IM1, IM3.r)
 
-ggregplot::ggField(IM3, Mesh, Groups = 1) +
+ggregplot::ggField(IM3.r, Mesh, Groups = 1) +
   scale_fill_brewer(palette = "Blues")#Plotting the spatial field 
 sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
 ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
 dput(summary(IM3), file="INLAsummary_IM3.txt", control="all")
 summary(IM3)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
 ggregplot::Efxplot(SpatialHostList)
-ggregplot::Efxplot(IM3)+ggtitle("INLA spatial model")
+ggregplot::Efxplot(IM3.r)+ggtitle("INLA spatial model")
 saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
-saveRDS(IM3, paste0("output/","IM3",".rds"))
+saveRDS(IM3.r, paste0("output/","IM3",".rds"))
 ```
 ```{r}
 usa <- map_data("state")
