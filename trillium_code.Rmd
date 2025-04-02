@@ -391,9 +391,9 @@ points <- cbind(points_climate, cropdata_extract)
 footprint<-footprint(year=2009, path = "data/")
 footprint_crop<- crop(x = footprint, y = sample_extent) 
 plot(footprint_crop[[1]])
+names(footprint_crop)<-"footprint"
 footprint_extract<- terra::extract(x = footprint_crop, y = as.matrix(inat_clean[, c("longitude", "latitude")]))
-footprint_extract<-rename(footprint_extract, footprint = `wildareas-v3-2009-human-footprint`
-)
+#footprint_extract<-rename(footprint_extract, footprint = `wildareas-v3-2009-human-footprint`)
 points<-cbind(points, footprint_extract)
 
 bioclim_data
@@ -423,12 +423,13 @@ grid_assignments = st_intersection(fishnet_grid_sf, dat_ea)
 # Calculate frequencies per grid cell
 freq_per_poly = grid_assignments %>% 
   group_by(grid_id) %>% 
-  summarize(n = n(), n_infected = sum(infected == "Yes")) %>% 
+  summarize(n = n(), n_infected = sum(infected == "1")) %>% 
   mutate(freq_infected = n_infected/n)
 
 # Rejoin these calculated frequencies to polygons for plotting
 freqs_with_polys = st_join(fishnet_grid_sf, freq_per_poly) %>% 
   filter(!is.na(n))
+plot(freqs_with_polys)
 
 world = ne_countries(scale = "large", returnclass = "sf", continent = "north america")
 lakes = ne_download(scale = "medium", type = "lakes", category = "physical")
@@ -449,7 +450,7 @@ tril_a<-ggplot() +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()
 
-plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1) #10 by 7 portrait
+cowplot::plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1) #10 by 7 portrait
 trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1)
 ```
 ##Moran’s I analysis
@@ -491,38 +492,44 @@ plot(MC.n)
 ##Models
 what seems to cause infection?
 ```{r}
-as.data.frame(grid_assignments)
-as.data.frame(freq_per_poly)
-
+#as.data.frame(grid_assignments)
+#as.data.frame(freq_per_poly)
 inat_grid<-merge(as.data.frame(grid_assignments), as.data.frame(freq_per_poly), by.x="grid_id", by.y="grid_id")
 inat_grid<-inat_grid %>% dplyr::select(grid_id, id, n, n_infected, freq_infected)
-
 inat_full<-merge(inat_grid, points, by.x="id", by.y="id")
 inat_full$infected<-as.numeric(inat_full$infected)
-inat_full$footprint<-inat_full$`wildareas-v3-2009-human-footprint`
+#inat_full$footprint<-inat_full$`wildareas-v3-2009-human-footprint`
 inat_full$Year<-substring(inat_full$observed_on,1,4)
-str(inat_full)
+#str(inat_full)
 ```
 ```{r}
 #add total trillium number as a layer to the raster 
 r <- rast(xmin=-100.875, xmax=-62.125, ymin=31.125, ymax=49.875, ncols=4650, nrows=2250, crs = crs(geo_data_test))
 # you need to provide a function 'fun' for when there are multiple points per cell
-trillium_number <- rasterize(as.matrix((inat_full %>% select(longitude, latitude,n))[, 1:2]), r, as.matrix((inat_full %>% select(longitude, latitude,n))[,3]), fun=sum)
-plot(trillium_number_resampled)
+inat_sub_matrix<-as.matrix(inat_full%>% select(longitude, latitude,n))
+trillium_number <- rasterize(inat_sub_matrix[,1:2], r, inat_sub_matrix[,3], fun=max)
 trillium_number_resampled <- resample(trillium_number, geo_data_test)
 names(trillium_number_resampled)<-"n"
+plot(trillium_number_resampled)
 geo_data_test<-c(geo_data_test, trillium_number_resampled)
 
+points<-SpatialPoints(inat_sub_matrix[, c('longitude','latitude')], inat_sub_matrix[, c('n')])
+pixels<-SpatialPixelsDataFrame(points, tolerance=0.916421, points@data)
+raster<-raster(pixels[,'n'])
+
 #add lat and long as a layer to the raster??
-latitude <- rasterize(as.matrix((inat_full %>% select(longitude, latitude))[, 1:2]), r, as.matrix(inat_full$latitude), fun=mean)
-latitude<- resample(latitude, geo_data_test)
-names(latitude)<-"latitude"
-geo_data_test<-c(geo_data_test, latitude)
-longitude <- rasterize(as.matrix((inat_full %>% select(longitude, latitude))[, 1:2]), r, as.matrix(inat_full$longitude), fun=mean)
+r <- rast(xmin=-100.875, xmax=-62.125, ymin=31.125, ymax=49.875, ncols=4650, nrows=2250, crs = crs(geo_data_test))
+longitude<-latitude<-r
+longitude[]<-xFromCell(r, 1:ncell(r))
 names(longitude)<-"longitude"
-longitude<- resample(longitude, geo_data_test)
+latitude[]<-yFromCell(r, 1:ncell(r))
+names(latitude)<-"latitude"
+plot(longitude)  
+plot(latitude)  
 geo_data_test<-c(geo_data_test, longitude)
-plot(longitude)
+geo_data_test<-c(geo_data_test, latitude)
+names(geo_data_test)
+#cellFromXY(r)
 ```
 
 ###GAM
@@ -543,6 +550,7 @@ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s
 ```
 
 Run models
+"We used a binomial generalized additive model to predict infection status of observations (mgcv;). As smooth predictors, we included all non-collinear bioclimatic variables, cropland, footprint, total trillium number within the observation’s 5 km by 5 km grid, and to account for spatial autocorrelation, we included latitude and longitude as interacting smooth effects (bs = gp, k = 200, m = 2)."
 ```{r}
 library(mgcv)
 #https://m-clark.github.io/generalized-additive-models/appendix.html
@@ -588,10 +596,11 @@ str(training)
 gam_training<-gam(infected ~ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18, k=30)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=training)
 summary(gam_training)
 
-which(is.na(training$footprint))
+dim(geo_data_test)
 names(geo_data_test)
+
 # Get predicted values from the model 
-gam_predict <- predict(geo_data_test, gam_training, type = "response") #geo_data but with trillium number and lat and long
+gam_predict <- terra::predict(geo_data_test, gam_training, type = "response") #geo_data but with trillium number and lat and long
 # Print predicted values 
 plot(gam_predict)
 # Use testing data for model evaluation 
@@ -615,11 +624,22 @@ tril_c<-ggplot() +
 
 ### INLA
 https://ourcodingclub.github.io/tutorials/inla/
+https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
 ```{r}
+#install.packages("devtools")
 #if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
 #install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 library(INLA); library(ggregplot); library(RColorBrewer)
+library(INLA)
+library(INLAspacetime)
+library(usdm)
 head(inat_full)
+
+##########################################################################
+which(is.na(inat_full$wc2.1_30s_bio_1)) #41 uninfected trillium near quebec and montreal don't have associated bioclim data for some reason. we need to exclude them for INLA
+inat_full[which(is.na(inat_full$wc2.1_30s_bio_1)),]
+inat_full_complete = inat_full[complete.cases(inat_full[53:73]),]
+##########################################################################
 
 phen <- c("longitude", "latitude") # Base columns with spatial information we'll need
 
@@ -627,59 +647,33 @@ resp <- "infected" # Response variable
 
 covar <- c("n","wc2.1_30s_bio_1",  "wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_5","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_11","wc2.1_30s_bio_12","wc2.1_30s_bio_13","wc2.1_30s_bio_14","wc2.1_30s_bio_15","wc2.1_30s_bio_16","wc2.1_30s_bio_17","wc2.1_30s_bio_18","wc2.1_30s_bio_19","cropland", "footprint")
 
-# Specify the formula
-f0.1 <- as.formula(paste0(resp, " ~ ", # Response first
-                          paste(covar, collapse = " + ") # Collapse the vector of covariates
-))
+#Selecting final variables for the model
+ggregplot::INLAModelSel(resp, covar, Family="binomial", Data=inat_full_complete) #removes variables that improve DIC by at least 2
+  #[1] "Losing wc2.1_30s_bio_18"[1] "Run 2"[1] "Losing wc2.1_30s_bio_1"[1] "Run 3"[1] "Losing wc2.1_30s_bio_13"[1] "Run 4" "Losing wc2.1_30s_bio_16"[1] "Run 5[1]   "Losing wc2.1_30s_bio_17"[1] "Run 6"[1] "Losing n"[1] "Run 7"[1] "Losing wc2.1_30s_bio_5"[1] "Run 8"[1] "Losing footprint"[1] "Run 9"[1] "Losing   wc2.1_30s_bio_11"[1] "Run 10"[1] "Losing wc2.1_30s_bio_15"[1] "Run 11" 
+  #it removed n and footprint, but I want to keep them in the model due to a priori reasons
 
-# Run the model 
-IM0.1  <- inla(f0.1, 
-               family = "binomial", # Specify the family. Can be a wide range (see r-inla.org).
-               data = inat_full) # Specify the data
-summary(IM0.1)
-Efxplot(list(IM0.1)) #There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+vifcor(inat_full_complete %>% dplyr::select(n,wc2.1_30s_bio_2,wc2.1_30s_bio_3,wc2.1_30s_bio_4,wc2.1_30s_bio_6,wc2.1_30s_bio_7,wc2.1_30s_bio_8,wc2.1_30s_bio_9,wc2.1_30s_bio_10,wc2.1_30s_bio_12,wc2.1_30s_bio_14,wc2.1_30s_bio_19,cropland, footprint)) #remove vars 19, 7, 4, 12 due to multicollinearity #except var 3 still has REALLY HIGH VIF! Let's see what happens when we remove it
+vifcor(inat_full_complete %>% dplyr::select(n,wc2.1_30s_bio_2,wc2.1_30s_bio_6,wc2.1_30s_bio_8,wc2.1_30s_bio_9,wc2.1_30s_bio_10,wc2.1_30s_bio_14,cropland, footprint))#After removing var 3, all VIFs are under 5, which is great
 
-#Perform model selection by removing covariates one by one and seeing how this changes model fit according to the model’s Deviance Information Criterion
-#library(beepr)
-#library(MCMCglmm)
-ModelSel <- INLAModelSel(resp, covar, Family="binomial", Data=inat_full)
-#[1] "Losing wc2.1_30s_bio_16" "Run 2" "Losing wc2.1_30s_bio_1" "Run 3""Losing wc2.1_30s_bio_18" "Run 4" "Losing wc2.1_30s_bio_17" "Run 5" "Losing wc2.1_30s_bio_13" "Run 6""Losing wc2.1_30s_bio_11" "Run 7" "Losing n" "Run 8" "Losing wc2.1_30s_bio_5" "Run 9" "Losing wc2.1_30s_bio_15" "Run 10" #######it removed 9, but I want to keep n in the model
-Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_12","wc2.1_30s_bio_14","wc2.1_30s_bio_19","cropland", "footprint")
-#Finalcovar <- ModelSel$Removed[[length(ModelSel$Removed)]]
-f1 <- as.formula(paste0(resp, " ~ ", 
-                        paste(Finalcovar, collapse = " + "))) 
+Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_6","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_14","cropland", "footprint")
 
-IM1 <- inla(f1,
-            family = "binomial",
-            data = inat_full,
-            control.compute = list(dic = TRUE)) 
-summary(IM1)
-Efxplot(list(IM1))
-##########################################################################
-which(is.na(inat_full$wc2.1_30s_bio_1)) #41 uninfected trillium near quebec and montreal don't have associated bioclim data for some reason. we need to exclude them for INLA
-sum(is.na(inat_full$wc2.1_30s_bio_1))
-inat_full[which(is.na(inat_full$wc2.1_30s_bio_1)),]
-inat_full_complete = inat_full[complete.cases(inat_full[53:73]),]
-##########################################################################
 #incorporating space
 Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # using the sampling locations
-MeshB <- inla.mesh.2d(Locations, max.edge = c(20, 40)) #bigger triangles for data exploration
-MeshC <- inla.mesh.2d(Locations, max.edge = c(10, 20)) #smaller triangles- use smaller triangles for publication
-Mesh <- MeshB
-plot(MeshB)
-plot(MeshC)
+Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1) #smaller triangles- use smaller triangles for publication
+plot(Mesh)
 points(Locations, col = "red", pch = 2)
 # Making the A matrix
-HostsA <- inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
-Hosts.spde = inla.spde2.pcmatern(mesh = Mesh, prior.range = c(10, 0.5), prior.sigma = c(.5, .5)) # Making SPDE
-w.Host <- inla.spde.make.index('w', n.spde = Hosts.spde$n.spde) # making the w
+HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
+Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662. This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
+Hosts.spde = INLA::inla.spde2.pcmatern(mesh = Mesh, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
+w.Host <- INLA::inla.spde.make.index('w', n.spde = Hosts.spde$n.spde) # making the w
 
 # Making the model matrix #### 
 X0 <- model.matrix(as.formula(paste0("~ -1 +", paste(Finalcovar, collapse = "+"))), data = inat_full_complete) # make the model matrix using the final model selection formula without a response variable.
 X <- as.data.frame(X0)
 # Making the stack ####
 N <- nrow(inat_full_complete)
-StackHost <- inla.stack(
+StackHost <- INLA::inla.stack(
   data = list(y = inat_full_complete[,resp]), # specify the response variable
   A = list(1,1,HostsA), # Vector of Multiplication factors for random and fixed effects  #put as many 1s as there are fixed and random effects in the effects() below            
   effects = list(
@@ -690,68 +684,154 @@ StackHost <- inla.stack(
 #Running the model
 f1 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "))) #version only fixed effects
 f3 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "), " + f(w, model = Hosts.spde)")) #version with space SPDE random effect
-IM1 <- inla(f1, # Base model (no random effects)
+IM1 <- INLA::inla(f1, # Base model (no random effects)
             family = "binomial",
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
-            control.predictor = list(A = inla.stack.A(StackHost)))
-IM3 <- inla(f3, # SPDE random effect 
+            control.predictor = list(A = INLA::inla.stack.A(StackHost)))
+IM3 <- INLA::inla(f3, # SPDE random effect 
             family = "binomial",
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
-            control.predictor = list(A = inla.stack.A(StackHost)))
+            control.predictor = list(A = INLA::inla.stack.A(StackHost)))
 SpatialHostList <- list(IM1, IM3)
 
-ggField(IM3, Mesh, Groups = 1) +
-  scale_fill_brewer(palette = "Blues") #Plotting the spatial field 
+ggregplot::ggField(IM3, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Blues")#Plotting the spatial field 
 sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
-INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
-```
-
-
-###Species distribution model?
-https://jcoliver.github.io/learn-r/011-species-distribution-models.pdf 
-```{r}
-inat_1<-merge(inat_grid, points, by.x="id", by.y="id")
-inat_1 = subset(inat_1, select = -c(.val,.equ, .zer, .cen, .inst, .dpl, .summary) )
-# Create vector indicating fold for making a training dataset 
-fold <- folds(x = inat_1, k = 5, by = inat_full$infected) #five folds so that we can test on 20% of the data
-testing <- inat_1[fold == 1, ] 
-training <- inat_1[fold != 1, ]
-
-# Build a model using training data 
-glm_model <- glm(as.numeric(infected) ~ wc2.1_30s_bio_1+ wc2.1_30s_bio_2+wc2.1_30s_bio_3+wc2.1_30s_bio_4+wc2.1_30s_bio_5+wc2.1_30s_bio_6+wc2.1_30s_bio_7+wc2.1_30s_bio_8+wc2.1_30s_bio_9+wc2.1_30s_bio_10+wc2.1_30s_bio_11+wc2.1_30s_bio_12+wc2.1_30s_bio_13+wc2.1_30s_bio_14+wc2.1_30s_bio_15+wc2.1_30s_bio_16+wc2.1_30s_bio_17+wc2.1_30s_bio_18+wc2.1_30s_bio_19+cropland+`wildareas-v3-2009-human-footprint`, data = training, family = binomial)
-summary(glm_model)
-
-tril_num<-rast(nrows=inat_full$latitude, ncols=inat_full$longitude, vals=inat_full$n)
-geo_data_test<-geo_data
-add(geo_data_test) <- tril_num
-
-# Get predicted values from the model 
-glm_predict <- predict(geo_data, glm_model, type = "response") #should I incorporate trillium n into this?
-# Print predicted values 
-plot(glm_predict)
-# Use testing data for model evaluation 
-glm_eval <- pa_evaluate(p = testing[testing$infected == 1, ], a = testing[testing$infected == 0, ], model = glm_model, type = "response")
-# Determine minimum threshold for "presence" 
-glm_threshold <- glm_eval@thresholds$max_spec_sens
-```
-```{r}
-world = ne_countries(scale = "large", returnclass = "sf", continent = "north america")
-lakes = ne_download(scale = "medium", type = "lakes", category = "physical")
-
-tril_c<-ggplot() +
-   geom_spatraster(data = (glm_predict> glm_threshold), aes(fill = lyr1))+#Only plot areas where probability of occurrence is greater than the threshold 
-  geom_sf(data = world, fill="NA") +
-  geom_sf(data = lakes, color = "grey", fill = "grey") +
-  coord_sf(xlim =c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()+scale_fill_manual(name="Suitability for phytoplasma", values=c("NA","red"), na.value="NA")+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), shape=3, size=1,alpha=0.3)
-#the map we have drawn presents a categorical classification of whether a particular point on the landscape will be suitable or not for the species of interest.
+4701.543-4387.341
+ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
+dput(summary(IM3), file="INLAsummary_IM3.txt", control="all")
+summary(IM3)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spatial", "Base"))+cowplot::theme_cowplot()+
+  cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)
+ggregplot::Efxplot(IM3)+ggtitle("INLA spatial model")+cowplot::theme_cowplot()+
+  cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)
+#saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
+#saveRDS(IM3, paste0("output/","IM3",".rds"))
 ```
 
 ```{r}
-plot_grid(trilab, tril_c, labels=c("","C"), ncol=2)
+usa <- map_data("state")
+canada <- map_data("worldHires","Canada")
+ggregplot::ggField(IM3, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Blues")+ geom_polygon(data = usa, 
+                                 aes(x=long, y = lat, group = group), 
+                                 fill = NA, 
+                                 color="black") +
+    geom_polygon(data = canada, aes(x=long, y = lat, group = group), 
+                 fill = NA, color="black")+
+    coord_fixed(xlim = c(-100, -65),  ylim = c(30, 55))+xlab("Longitude")+ylab("Latitude")
 ```
+
+
+####Making predictions
+https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
+"To produce predictions using INLA, we need to generate a dataset (with attached coordinates on the locations we wish to predict to) and attach a series of missing observation to it (coded as NA in R). When the missing observations are in the response variable, INLA automatically computes the predictive distribution of the corresponding linear predictor and fitted values.
+Using INLA syntax is possible to generate model predictions by fitting a stack where the response variable is set as NAs, and then join this stack with the estimation stack (which is similar to what we have used so far). Then we can extract the values of the predicted response variable and use the inla.mesh.projector() function to project these values on the mesh vertices (like we have been doing when plotting the GRF earlier on)."
+```{r}
+# The first step is to load the prediction raster file (this one is a ASCII file).
+require(raster)
+require(rgdal)
+#put in my geo_data_test file here
+GS_Matrix <- matrix(crop_data) #To start, we transform the raster values for the amount of green space (GS ratio) into a matrix and then reallocate the coordinates to a matrix of ncol X nrow cells (numbers of columns and rows).
+GS_Pred<-raster(GS_Matrix)
+str(GS_Matrix)
+
+y.res <- GS_Pred@nrows
+x.res <- GS_Pred@ncols
+#Next, we need to create a grid of ncol X nrow cells containing the coordinates of the points where we wish to project our model predictions.
+Seq.X.grid <- seq(from = GS_Pred@extent@xmin,
+                  to = GS_Pred@extent@xmax,
+                  length = x.res)
+
+Seq.Y.grid <- seq(from = GS_Pred@extent@ymin,
+                  to = GS_Pred@extent@ymax,
+                  length = y.res)
+
+pred.grid <- as.matrix(expand.grid(x = Seq.X.grid,
+                                   y = Seq.Y.grid))
+
+str(pred.grid)
+#Now that we the grid with the coordinates of each cell centroid we can procede to make the mesh SPDE and spatial index as usual.
+MeshPred <- inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1)
+plot(MeshPred)
+
+#spde.pred <- inla.spde2.matern(mesh = MeshPred,alpha = 2)
+spde.pred = INLA::inla.spde2.pcmatern(mesh = MeshPred, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
+
+s.index.p <- inla.spde.make.index(name = "sp.field.pred",
+                                  n.spde = spde.pred$n.spde)
+#Since the points where we want to project our predictions are different from the datapoints, we need two different projector matrices. The first one is the standard one we have used so far (A_est), while the second does not contain point locations since we will project the model results directly on the mesh vertices. Similarly, we will need two stacks, one for estimations and one for predictions, joined using the inla.stack() function to form a joined stack
+A_est <- inla.spde.make.A(mesh = MeshPred,
+                          loc = Locations)
+
+A_pred <- inla.spde.make.A(mesh = MeshPred)
+
+StackEst <- INLA::inla.stack(
+  data = list(y = inat_full_complete[,resp]), # specify the response variable
+  A = list(1,1,HostsA), 
+  effects = list(
+    Intercept = rep(1, N), 
+    X = X,
+    s.index.p),tag = "Est")
+
+stackPred <- inla.stack(data = list(y = NA),  # NAs in the response variable  
+                        A = list(A_pred),
+                        effects = list(c(list(Intercept = 1),  s.index.p)), tag = "Pred")
+
+StackJoin <- inla.stack(StackEst, stackPred)
+
+f4 <- as.formula(paste0("y ~ -1 + Intercept + ", paste0(colnames(X), collapse = " + "), " + f(sp.field.pred, model = spde.pred)"))
+#Then we can specify the formula and run the model as usual (using the joint stack).
+Mod_Pred<-inla(f4, 
+            family = "binomial",
+            data = inla.stack.data(StackJoin, , spde = spde.pred),
+            control.compute = list(dic = TRUE),
+            control.predictor = list(A = inla.stack.A(StackJoin),  compute = T))
+#We need to extract the index of the data from the prediction part of the stack (using the tag “Pred” we assigned to the stack) and use it to select the relevant posterior mean and sd for the predicted response variable. Then we use the inla.mesh.projector() function to calculate the projection from the Mesh to the grid we created (pred.grid).
+index.pred <- inla.stack.index(StackJoin, "Pred")$data
+
+post.mean.pred <- Mod_Pred$summary.linear.predictor[index.pred, "mean"]
+post.sd.pred <- Mod_Pred$summary.linear.predictor[index.pred, "sd"]
+
+proj.grid <- inla.mesh.projector(MeshPred,
+                                 xlim = range(pred.grid[,1]),
+                                 ylim = range(pred.grid[,2]),
+                                 dims = c(x.res, y.res))
+#Finally, we project the values we extracted from the model on the lattice we have created and transform the projected predictions to a raster object and plot them (we do this for both the mean and standard deviation).
+post.mean.pred.grid <- inla.mesh.project(proj.grid, post.mean.pred)
+post.sd.pred.grid <- inla.mesh.project(proj.grid, post.sd.pred)
+
+predmean <- t(post.mean.pred.grid)
+predmean2 <- predmean[rev(1:length(predmean[,1])),]
+predmean_ras <- raster(predmean2,
+                      xmn = range(projgrid$x)[1], xmx = range(projgrid$x)[2],
+                      ymn = range(projgrid$y)[1], ymx = range(projgrid$y)[2],
+                      crs = CRS("ESRI:102003"))
+
+predsd <- t(post.sd.pred.grid)
+predsd2 <- predsd[rev(1:length(predsd[,1])),]
+predsd_ras <- raster(predsd2,
+                       xmn = range(projgrid$x)[1], xmx = range(projgrid$x)[2],
+                       ymn = range(projgrid$y)[1], ymx = range(projgrid$y)[2],
+                       crs = CRS("ESRI:102003"))
+
+# plot the model predictions for mean
+par(mfrow = c(1,1), mar = c(2,2, 1,1))
+plot(predmean_ras, asp = 1, col = my.palette.post)
+points(Fox_Point, pch = 16, cex = 0.5)
+#plot(Scot_Shape_BNG, add = T) #add map using shapefile of NA
+
+# plot the model predictions for sd
+par(mfrow = c(1,1), mar = c(2,2, 1,1))
+plot(predsd_ras, asp = 1, col = my.palette.var)
+points(Fox_Point, pch = 16, cex = 0.5)
+#plot(Scot_Shape_BNG, add = T)
+```
+
+
+
 
 
 ##############################################################################################
