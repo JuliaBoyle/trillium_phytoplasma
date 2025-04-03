@@ -303,7 +303,7 @@ library(tidyverse)
 #inat<-read.csv("iNat_alltrilliums_2023_07_05.csv") #only up until 2023
 inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
 head(inat)
-
+set.seed(1)
 inat_cleaned = inat %>% 
   # Adding positional accuracy filter to see if that helps deal with observations in lakes
   filter(!is.na(latitude), !is.na(longitude), !is.na(public_positional_accuracy)) %>% 
