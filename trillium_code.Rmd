@@ -297,13 +297,15 @@ library(terra)
 library(tmap) 
 library(predicts)
 library(tidyverse)
+library(cowplot)
 ```
 
 ```{r}
 #inat<-read.csv("iNat_alltrilliums_2023_07_05.csv") #only up until 2023
 inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
 head(inat)
-set.seed(1)
+
+set.seed(2025)
 inat_cleaned = inat %>% 
   # Adding positional accuracy filter to see if that helps deal with observations in lakes
   filter(!is.na(latitude), !is.na(longitude), !is.na(public_positional_accuracy)) %>% 
@@ -326,21 +328,10 @@ inat_clean=inat_clean %>% filter(.summary==TRUE) #only include observations that
 inat_clean=inat_clean %>% mutate(infected=ifelse(grepl("Yes", infected), "1", "0"))
 inat_clean$infected
 
-inat%>% filter( field.phytoplasma.infection.=="Yes") #845
-inat_cleaned%>% filter( field.phytoplasma.infection.=="Yes") #550
+inat%>% filter( field.phytoplasma.infection.=="Yes") #846
 inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #526 after filtering out stuff with clean_coordinates
 ```
 ```{r}
-#old code to do the above cleaning of users
-set.seed(1)
-overrepresented_users<-inat_clean %>% group_by(user_login) %>% tally() %>% filter(n>15)
-overrepresented_samples<-subset(inat_clean, user_login %in% overrepresented_users$user_login)
-overrepresented_subset<-plyr::ddply(overrepresented_samples,.(user_login),function(x) x[sample(nrow(x),15),])#make the max number of observations per user 15 
-normalrepresented_users<-inat_clean %>% group_by(user_login) %>% tally() %>% filter(n<=15)
-normalrepresented_samples<-subset(inat_clean, user_login %in% normalrepresented_users$user_login)
-inat_clean_corrected<-rbind(overrepresented_subset,normalrepresented_samples)
-inat_clean_corrected
-
 inat_clean_tally<-inat_clean %>% group_by(user_login) %>% tally()
 mean(inat_clean_tally$n)
 median(inat_clean_tally$n)
@@ -349,8 +340,8 @@ inatinfec<-inat_clean %>% filter( field.phytoplasma.infection.=="Yes") #make ano
 inatinfec %>% group_by(user_login) %>% tally() #vast majority of users contributed less than 6 infected observations, one person contributed 12
 inat_clean %>% group_by(user_login) %>% tally()
 
-inat_clean %>% filter(observed_on>'2020-01-01') #23405
-23405/28390
+inat_clean %>% filter(observed_on>'2020-01-01') #23,385
+23385/28371
 ```
 
 ## Extracting coordinate data
@@ -440,7 +431,7 @@ tril_b<-ggplot() +
   geom_sf(data = freqs_with_polys, aes(fill = freq_infected), alpha = 0.8, color = "lightgrey") +
   scale_fill_gradientn(colours = c("white", "#CCFF99", "darkgreen"), values = c(0,0.000001,1), name="Proportion \ninfected") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()
+  theme_bw()+ theme(legend.position = c(0.15, 0.23))
 
 tril_a<-ggplot() +
   geom_sf(data = world, fill = "white") +
@@ -448,10 +439,10 @@ tril_a<-ggplot() +
   geom_sf(data = freqs_with_polys, aes(fill = n), alpha = 0.8, color = "lightgrey") +
   scale_fill_gradientn(colours = c("white", "lightblue", "navy"), name="Observations") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()
+  theme_bw()+ theme(legend.position = c(0.15, 0.23))
 
 cowplot::plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1) #10 by 7 portrait
-trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1)
+trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), nrow=1) #5 by 11 landscape
 ```
 ##Moran’s I analysis
 https://mgimond.github.io/simple_moransI_example/
@@ -465,18 +456,18 @@ inc.lag <- lag.listw(lw, freqs_with_polys$n_infected)
 plot(inc.lag ~ freqs_with_polys$n_infected, pch=16, asp=1)
 M1 <- lm(inc.lag ~ freqs_with_polys$n_infected)
 abline(M1, col="blue")
-coef(M1)[2] #0.4216945
+coef(M1)[2] #0.4040173
 #this slope is Morans I: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
 #a positive Moran’s I value suggests clustering whereas a negative Moran’s I value suggests dispersion
 inc.lag.freq <- lag.listw(lw, freqs_with_polys$freq_infected)
 plot(inc.lag.freq ~ freqs_with_polys$freq_infected, pch=16, asp=1)
 M1.freq <- lm(inc.lag.freq ~ freqs_with_polys$freq_infected)
 abline(M1.freq, col="blue")
-coef(M1.freq)[2] #0.1072854
+coef(M1.freq)[2] #0.1074369
 
-moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4302413, infections are pretty clustered in space
-moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1082928
-moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3096669
+moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4122603, infections are pretty clustered in space
+moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1084906
+moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3111099
 
 MC.ninfec<- moran.mc(freqs_with_polys$n_infected, lw, nsim=999, alternative="greater")
 MC.ninfec
@@ -626,6 +617,7 @@ tril_c<-ggplot() +
 https://ourcodingclub.github.io/tutorials/inla/
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
 ```{r}
+set.seed(2025)
 #install.packages("devtools")
 #if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
 #install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
@@ -694,6 +686,7 @@ IM3 <- INLA::inla(f3, # SPDE random effect
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
             control.predictor = list(A = INLA::inla.stack.A(StackHost)))
+IM3<-inla.rerun(IM3)
 SpatialHostList <- list(IM1, IM3)
 
 ggregplot::ggField(IM3, Mesh, Groups = 1) +
@@ -703,8 +696,20 @@ sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
 ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
 dput(summary(IM3), file="INLAsummary_IM3.txt", control="all")
 summary(IM3)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spatial", "Base"))+cowplot::theme_cowplot()+
-  cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)
+tril_c<-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spatial", "Base"))+cowplot::theme_cowplot()+
+  cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)+scale_x_discrete(
+    "Fixed effect",
+    labels = c(
+      "Intercept" = "Intercept",
+      "n" = "Trillium density",
+      "wc2.1_30s_bio_2" = "Mean diurnal range",
+      "wc2.1_30s_bio_6" = "Min. temp. of coldest month",
+      "wc2.1_30s_bio_8" = "Mean temp. of wettest quart.",
+      "wc2.1_30s_bio_9" = "Mean temp. of driest quart.",
+      "wc2.1_30s_bio_10" = "Mean temp of warmest quart.",
+      "wc2.1_30s_bio_14" = "Precip. of driest month", 
+      "cropland" = "Cropland",
+      "footprint" = "Footprint" ))+scale_colour_manual(values=c("darkgreen", "grey"))
 ggregplot::Efxplot(IM3)+ggtitle("INLA spatial model")+cowplot::theme_cowplot()+
   cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)
 #saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
@@ -721,7 +726,21 @@ ggregplot::ggField(IM3, Mesh, Groups = 1) +
                                  color="black") +
     geom_polygon(data = canada, aes(x=long, y = lat, group = group), 
                  fill = NA, color="black")+
-    coord_fixed(xlim = c(-100, -65),  ylim = c(30, 55))+xlab("Longitude")+ylab("Latitude")
+    coord_fixed(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE)+xlab("Longitude")+ylab("Latitude")
+```
+
+```{r}
+tril_ab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), nrow=1)
+plot_grid(tril_ab, tril_c, labels=c("", "C"), nrow=2)
+plot_grid(tril_a, tril_b, tril_c, labels=c("A","B", "C"), nrow=1)
+```
+
+```{r}
+#Get predicted data on grid
+index.pred <- inla.stack.index(StackHost, "meuse.pred")$data
+
+meuse.grid$zinc.spde <- m1$summary.fitted.values[index.pred, "mean"]
+meuse.grid$zinc.spde.sd <- m1$summary.fitted.values[index.pred, "sd"]
 ```
 
 
