@@ -26,14 +26,14 @@ library(tmap)
 library(predicts)
 library(tidyverse)
 library(cowplot)
-sessionInfo()
+print(sessionInfo())
 ```
 
 ```{r}
 #inat<-read.csv("iNat_alltrilliums_2023_07_05.csv") #only up until 2023
 inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
 head(inat)
-
+set.seed(2025)
 inat_cleaned = inat %>% 
   # Adding positional accuracy filter to see if that helps deal with observations in lakes
   filter(!is.na(latitude), !is.na(longitude), !is.na(public_positional_accuracy)) %>% 
@@ -56,9 +56,8 @@ inat_clean=inat_clean %>% filter(.summary==TRUE) #only include observations that
 inat_clean=inat_clean %>% mutate(infected=ifelse(grepl("Yes", infected), "1", "0"))
 inat_clean$infected
 
-inat%>% filter( field.phytoplasma.infection.=="Yes") #845
-inat_cleaned%>% filter( field.phytoplasma.infection.=="Yes") #550
-inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #526 after filtering out stuff with clean_coordinates
+inat%>% filter( field.phytoplasma.infection.=="Yes") 
+inat_clean%>% filter( field.phytoplasma.infection.=="Yes") 
 ```
 ## Extracting coordinate data
 Run this everytime you load R because spatrasters do not save with R enviro
@@ -144,7 +143,7 @@ tril_b<-ggplot() +
   geom_sf(data = freqs_with_polys, aes(fill = freq_infected), alpha = 0.8, color = "lightgrey") +
   scale_fill_gradientn(colours = c("white", "#CCFF99", "darkgreen"), values = c(0,0.000001,1), name="Proportion \ninfected") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()
+  theme_bw()+ theme(legend.position = c(0.15, 0.23))
 
 tril_a<-ggplot() +
   geom_sf(data = world, fill = "white") +
@@ -152,10 +151,11 @@ tril_a<-ggplot() +
   geom_sf(data = freqs_with_polys, aes(fill = n), alpha = 0.8, color = "lightgrey") +
   scale_fill_gradientn(colours = c("white", "lightblue", "navy"), name="Observations") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()
+  theme_bw()+ theme(legend.position = c(0.15, 0.23))
 
 plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1) #10 by 7 portrait
-trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), ncol=1)
+trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), nrow=1) #5 by 11 landscape
+trilab
 ```
 ##Moran’s I analysis
 https://mgimond.github.io/simple_moransI_example/
@@ -169,18 +169,18 @@ inc.lag <- lag.listw(lw, freqs_with_polys$n_infected)
 plot(inc.lag ~ freqs_with_polys$n_infected, pch=16, asp=1)
 M1 <- lm(inc.lag ~ freqs_with_polys$n_infected)
 abline(M1, col="blue")
-coef(M1)[2] #0.4216945
+coef(M1)[2] # 0.4040173 
 #this slope is Morans I: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
 #a positive Moran’s I value suggests clustering whereas a negative Moran’s I value suggests dispersion
 inc.lag.freq <- lag.listw(lw, freqs_with_polys$freq_infected)
 plot(inc.lag.freq ~ freqs_with_polys$freq_infected, pch=16, asp=1)
 M1.freq <- lm(inc.lag.freq ~ freqs_with_polys$freq_infected)
 abline(M1.freq, col="blue")
-coef(M1.freq)[2] #0.1072854
+coef(M1.freq)[2] # 0.1074369 
 
-moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4302413, infections are pretty clustered in space
-moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1082928
-moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3096669
+moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4122603, infections are pretty clustered in space
+moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1084906
+moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3111099
 
 MC.ninfec<- moran.mc(freqs_with_polys$n_infected, lw, nsim=999, alternative="greater")
 MC.ninfec
@@ -204,89 +204,15 @@ inat_grid<-inat_grid %>% dplyr::select(grid_id, id, n, n_infected, freq_infected
 
 inat_full<-merge(inat_grid, points, by.x="id", by.y="id")
 inat_full$infected<-as.numeric(inat_full$infected)
-#inat_full$footprint<-inat_full$`wildareas-v3-2009-human-footprint`
 inat_full$Year<-substring(inat_full$observed_on,1,4)
 str(inat_full)
 ```
-
-###GAM
-
-Run models
-```{r}
-library(mgcv)
-#https://m-clark.github.io/generalized-additive-models/appendix.html
-#https://r.qcbs.ca/workshop08/book-en/gam-model-checking.html
-#https://noamross.github.io/gams-in-r-course/     <-----THIS ONE IS GREAT!!!
-# +s(latitude,longitude,bs="sos",m=2,k=200) #Spherical version
-#+s(latitude,longitude,bs="gp",m=2,k=200) #gaussian version
-gam_tril_allsmooth<-gam(infected ~ s(n, k=50) +s(wc2.1_30s_bio_1) +s(wc2.1_30s_bio_4) +s(wc2.1_30s_bio_5) +s(wc2.1_30s_bio_6) +s(wc2.1_30s_bio_12) +s(wc2.1_30s_bio_13) +s(wc2.1_30s_bio_14) +s(wc2.1_30s_bio_15) +s(cropland) +s(footprint) +s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=inat_full)
-
-#model 1
-summary(gam_tril_allsmooth)
-k.check(gam_tril_allsmooth) #if edf is too close to k, gives sig value. we want k-index near 1 and nonsig p. k controls wiggliness
-set.seed(1)
-gam.check(gam_tril_allsmooth)
-plot(gam_tril_allsmooth, residuals = TRUE, pch = 1, all.terms = TRUE, shade = TRUE, shift = coef(gam_tril)[1])
-concurvity(gam_tril_allsmooth, full = TRUE) #if worst case has values over 0.8 then you have problem similar to colinearity but with parabola-ness. Use full=F to find out the offenders
-concurvity(gam_tril_allsmooth, full = F)
-rpred <- predict(geo_data, gam_tril_allsmooth)#but maybe add one layer with tril n. eg. rstack <- stack(rx1, rx2, rzeros)/ names(rstack) <- c("x1", "x2", "sitef")
-vis.gam(gam_tril_allsmooth, view = c("latitude", "longitude"), plot.type = "contour", too.far = 0.05)#means it won't extrapolate more than 5% into untested combinations
-
-#model 2
-set.seed(1)
-gam_vifstep<-gam(infected ~ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18, k=30)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=inat_full)
-summary(gam_vifstep)
-gam.check(gam_vifstep)
-vis.gam(gam_vifstep, view = c("longitude", "latitude"), plot.type = "contour", too.far = 0.05, color="topo")#means it won't extrapolate more than 5% into untested combinations
-plot(gam_vifstep, residuals = TRUE, pch = 1, all.terms = TRUE, shade = TRUE, shift = coef(gam_tril)[1])
-```
-
-Species distribution model?
-https://jcoliver.github.io/learn-r/011-species-distribution-models.pdf 
-```{r}
-inat_1<-merge(inat_grid, points, by.x="id", by.y="id")
-inat_1 = subset(inat_1, select = -c(.val,.equ, .zer, .cen, .inst, .dpl, .summary) )
-# Create vector indicating fold for making a training dataset 
-fold <- folds(x = inat_1, k = 5, by = inat_full$infected) #five folds so that we can test on 20% of the data
-testing <- inat_1[fold == 1, ] 
-training <- inat_1[fold != 1, ]
-training$footprint<-as.numeric(training$footprint)
-training$infected<-as.numeric(training$infected)
-str(training)
-# Build a model using training data 
-gam_training<-gam(infected ~ s(n, k=50)+ s(wc2.1_30s_bio_2)+s(wc2.1_30s_bio_7)+s(wc2.1_30s_bio_8)+s(wc2.1_30s_bio_9)+s(wc2.1_30s_bio_10)+s(wc2.1_30s_bio_15)+s(wc2.1_30s_bio_18, k=30)+s(cropland)+s(footprint)+s(latitude,longitude,bs="gp",m=2,k=200),family="binomial",method = "REML",data=training)
-summary(gam_training)
-
-which(is.na(training$footprint))
-names(geo_data_test)
-# Get predicted values from the model 
-gam_predict <- predict(geo_data_test, gam_training, type = "response") #geo_data but with trillium number and lat and long
-# Print predicted values 
-plot(gam_predict)
-# Use testing data for model evaluation 
-gam_eval <- pa_evaluate(p = testing[testing$infected == 1, ], a = testing[testing$infected == 0, ], model = gam_training, type = "response")
-# Determine minimum threshold for "presence" 
-gam_threshold <- gam_eval@thresholds$max_spec_sens
-```
-```{r}
-world = ne_countries(scale = "large", returnclass = "sf", continent = "north america")
-lakes = ne_download(scale = "medium", type = "lakes", category = "physical")
-
-tril_c<-ggplot() +
-   geom_spatraster(data = (gam_predict> gam_threshold), aes(fill = lyr1))+#Only plot areas where probability of occurrence is greater than the threshold 
-  geom_sf(data = world, fill="NA") +
-  geom_sf(data = lakes, color = "grey", fill = "grey") +
-  coord_sf(xlim =c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()+scale_fill_manual(name="Suitability for phytoplasma", values=c("NA","red"), na.value="NA")+ geom_point(data=inatinfec, aes(x=longitude, y=latitude), shape=3, size=1,alpha=0.3)
-#the map we have drawn presents a categorical classification of whether a particular point on the landscape will be suitable or not for the species of interest.
-```
-
 
 ### INLA
 https://ourcodingclub.github.io/tutorials/inla/
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
 ```{r}
-set.seed(1)
+set.seed(2025)
 #install.packages("devtools")
 #if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
 #install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
@@ -310,7 +236,7 @@ covar <- c("n","wc2.1_30s_bio_1",  "wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30
 
 #Selecting final variables for the model
 ggregplot::INLAModelSel(resp, covar, Family="binomial", Data=inat_full_complete) #removes variables that improve DIC by at least 2
-  #[1] "Losing wc2.1_30s_bio_18"[1] "Run 2"[1] "Losing wc2.1_30s_bio_1"[1] "Run 3"[1] "Losing wc2.1_30s_bio_13"[1] "Run 4" "Losing wc2.1_30s_bio_16"[1] "Run 5[1]   "Losing wc2.1_30s_bio_17"[1] "Run 6"[1] "Losing n"[1] "Run 7"[1] "Losing wc2.1_30s_bio_5"[1] "Run 8"[1] "Losing footprint"[1] "Run 9"[1] "Losing   wc2.1_30s_bio_11"[1] "Run 10"[1] "Losing wc2.1_30s_bio_15"[1] "Run 11" 
+# "Losing wc2.1_30s_bio_13""Run 2" "Losing wc2.1_30s_bio_16""Run 3""Losing wc2.1_30s_bio_1""Run 4""Losing wc2.1_30s_bio_17""Run 5""Losing wc2.1_30s_bio_18""Run 6""Losing wc2.1_30s_bio_5""Run 7" "Losing n""Run 8" "Losing wc2.1_30s_bio_11""Run 9""Losing wc2.1_30s_bio_15""Run 10""Losing footprint""Run 11"
   #it removed n and footprint, but I want to keep them in the model due to a priori reasons
 
 vifcor(inat_full_complete %>% dplyr::select(n,wc2.1_30s_bio_2,wc2.1_30s_bio_3,wc2.1_30s_bio_4,wc2.1_30s_bio_6,wc2.1_30s_bio_7,wc2.1_30s_bio_8,wc2.1_30s_bio_9,wc2.1_30s_bio_10,wc2.1_30s_bio_12,wc2.1_30s_bio_14,wc2.1_30s_bio_19,cropland, footprint)) #remove vars 19, 7, 4, 12 due to multicollinearity #except var 3 still has REALLY HIGH VIF! Let's see what happens when we remove it
@@ -325,7 +251,7 @@ plot(Mesh)
 points(Locations, col = "red", pch = 2)
 # Making the A matrix
 HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
-Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662. This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
+Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
 Hosts.spde = INLA::inla.spde2.pcmatern(mesh = Mesh, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
 w.Host <- INLA::inla.spde.make.index('w', n.spde = Hosts.spde$n.spde) # making the w
 
@@ -369,22 +295,54 @@ ggregplot::Efxplot(IM3.r)+ggtitle("INLA spatial model")
 saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
 saveRDS(IM3.r, paste0("output/","IM3",".rds"))
 ```
+
+```{r}
+tril_d<-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spatial", "Base"))+cowplot::theme_cowplot()+
+  cowplot::background_grid(major = "y", minor = "y", size.minor = 0.5)+scale_x_discrete(
+    "Fixed effect",
+    labels = c(
+      "Intercept" = "Intercept",
+      "n" = "Trillium density",
+      "wc2.1_30s_bio_2" = "Mean diurnal range",
+      "wc2.1_30s_bio_6" = "Min. temp. of coldest month",
+      "wc2.1_30s_bio_8" = "Mean temp. of wettest quart.",
+      "wc2.1_30s_bio_9" = "Mean temp. of driest quart.",
+      "wc2.1_30s_bio_10" = "Mean temp of warmest quart.",
+      "wc2.1_30s_bio_14" = "Precip. of driest month", 
+      "cropland" = "Cropland",
+      "footprint" = "Footprint" ))+scale_colour_manual(values=c("darkgreen", "grey"))
+tril_d
+```
+
 ```{r}
 usa <- map_data("state")
 canada <- map_data("worldHires","Canada")
-ggregplot::ggField(IM3, Mesh, Groups = 1) +
+
+nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
+
+tril_c<-ggregplot::ggField(IM3, Mesh, Groups = 1) +
   scale_fill_brewer(palette = "Blues")+ geom_polygon(data = usa, 
                                  aes(x=long, y = lat, group = group), 
                                  fill = NA, 
                                  color="black") +
     geom_polygon(data = canada, aes(x=long, y = lat, group = group), 
                  fill = NA, color="black")+
-    coord_fixed(xlim = c(-100, -65),  ylim = c(30, 55))+xlab("Longitude")+ylab("Latitude")
+    coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE)+xlab("Longitude")+ylab("Latitude")+theme_bw()+scale_x_discrete(labels = c(
+      "-100" = "100°W",
+      "-95" = "95°W",
+      "-90" = "90°W",
+      "-85" = "85°W",
+      "-80" = "80°W",
+      "-75" = "75°W",
+      "-70" = "70°W"))
+```
+```{r}
+plot_grid(tril_a, tril_b, labels="AUTO")
+plot_grid(tril_a, tril_b, tril_c, tril_d, labels="AUTO") #12 by 1 landscape
 ```
 
-
-Making predictions
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
+https://becarioprecario.bitbucket.io/inla-gitbook/ch-spatial.html#sec:geostats
 "To produce predictions using INLA, we need to generate a dataset (with attached coordinates on the locations we wish to predict to) and attach a series of missing observation to it (coded as NA in R). When the missing observations are in the response variable, INLA automatically computes the predictive distribution of the corresponding linear predictor and fitted values.
 Using INLA syntax is possible to generate model predictions by fitting a stack where the response variable is set as NAs, and then join this stack with the estimation stack (which is similar to what we have used so far). Then we can extract the values of the predicted response variable and use the inla.mesh.projector() function to project these values on the mesh vertices (like we have been doing when plotting the GRF earlier on)."
 ```{r}
@@ -405,7 +363,7 @@ Seq.X.grid <- seq(from = GS_Pred@extent@xmin,
 
 Seq.Y.grid <- seq(from = GS_Pred@extent@ymin,
                   to = GS_Pred@extent@ymax,
-                  length = y.res)
+                  length = 28329)
 
 pred.grid <- as.matrix(expand.grid(x = Seq.X.grid,
                                    y = Seq.Y.grid))
@@ -424,19 +382,20 @@ s.index.p <- inla.spde.make.index(name = "sp.field.pred",
 A_est <- inla.spde.make.A(mesh = MeshPred,
                           loc = Locations)
 
-A_pred <- inla.spde.make.A(mesh = MeshPred)
+A_pred <- inla.spde.make.A(mesh = MeshPred, loc=coordinates(pred.grid))
 
-StackEst <- INLA::inla.stack(
-  data = list(y = inat_full_complete[,resp]), # specify the response variable
-  A = list(1,1,HostsA), 
-  effects = list(
-    Intercept = rep(1, N), 
-    X = X,
-    s.index.p),tag = "Est")
+#StackEst <- INLA::inla.stack(data = list(y = inat_full_complete[,resp]), # specify the response variable A = list(1,1,HostsA), effects = list(Intercept = rep(1, N),  X = X, s.index.p),tag = "Est")
 
-stackPred <- inla.stack(data = list(y = NA),  # NAs in the response variable  
-                        A = list(A_pred),
-                        effects = list(c(list(Intercept = 1),  s.index.p)), tag = "Pred")
+StackEst <-inla.stack(data  = list(y = inat_full_complete[,resp]),
+  A = list(HostsA, 1),
+  effects = list(c(s.index.p, list(Intercept = 1)),
+    list(X=X)),
+  tag = "Est")
+StackPred <-inla.stack(data  = list(y = NA),
+  A = list(A_pred, 1),
+  effects = list(c(s.index.p, list(Intercept = 1)),
+    list(X=X)),
+  tag = "Pred")
 
 StackJoin <- inla.stack(StackEst, stackPred)
 
