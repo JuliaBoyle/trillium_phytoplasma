@@ -246,7 +246,7 @@ Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_6","wc2.1_30s_bio_8","wc2.1_
 
 #incorporating space
 Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # using the sampling locations
-Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1) #smaller triangles- use smaller triangles for publication
+Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1, crs="ESRI:102003") #smaller triangles- use smaller triangles for publication
 plot(Mesh)
 points(Locations, col = "red", pch = 2)
 # Making the A matrix
@@ -293,8 +293,17 @@ summary(IM3)#There are no P values in INLA. Importance or significance of variab
 ggregplot::Efxplot(SpatialHostList)
 ggregplot::Efxplot(IM3.r)+ggtitle("INLA spatial model")
 saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
-saveRDS(IM3.r, paste0("output/","IM3",".rds"))
+saveRDS(IM3.r, paste0("output/","IM3.r",".rds"))
+
+IM3.r$summary.fitted.values #the predicted infection
+IM3.r$summary.random #this is how the random effects (n=205) affected likelihood of an observation being infected
+IM3.r$summary.hyperpar #overall summary of random effects of space
+IM3.r$summary.fixed #this is how the fixed effects (n=10) affected likelihood of an observation being infected
+
+inla.spde2.result(inla=IM3.r, name="w", spde=Hosts.spde, do.transform = T) #extracting info on the spatial field, while transforming results back from internal model scale
+#the higher the Kappa, the smoother the spatial autocorrelation structure. Shorter range and smaller kappa indicate higher autocorrelation between closely related points
 ```
+
 
 ```{r}
 tril_d<-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spatial", "Base"))+cowplot::theme_cowplot()+
@@ -310,7 +319,7 @@ tril_d<-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spat
       "wc2.1_30s_bio_10" = "Mean temp of warmest quart.",
       "wc2.1_30s_bio_14" = "Precip. of driest month", 
       "cropland" = "Cropland",
-      "footprint" = "Footprint" ))+scale_colour_manual(values=c("darkgreen", "grey"))
+      "footprint" = "Footprint" ))+scale_colour_manual(labels=c("SPDE","Base"),values=c("darkgreen", "grey"))
 tril_d
 ```
 
@@ -321,7 +330,30 @@ canada <- map_data("worldHires","Canada")
 nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
 tril_c<-ggregplot::ggField(IM3, Mesh, Groups = 1) +
-  scale_fill_brewer(palette = "Blues")+ geom_polygon(data = usa, 
+  scale_fill_brewer(palette = "Greens")+ geom_polygon(data = usa, 
+                                 aes(x=long, y = lat, group = group), 
+                                 fill = NA, 
+                                 color="black") +
+    geom_polygon(data = canada, aes(x=long, y = lat, group = group), 
+                 fill = NA, color="black")+
+    coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE)+xlab("Longitude")+ylab("Latitude")+theme_bw()+scale_x_discrete(labels = c(
+      "-100" = "100°W",
+      "-95" = "95°W",
+      "-90" = "90°W",
+      "-85" = "85°W",
+      "-80" = "80°W",
+      "-75" = "75°W",
+      "-70" = "70°W"))#+scale_y_discrete(labels = c("55" = "55°N", "50" = "50°N", "45" = "45°N","40" = "40°N", "35" = "35°N","30" = "30°N", "25" = "25°N",))
+```
+```{r}
+plot_grid(tril_a, tril_b, labels="AUTO")
+plot_grid(tril_a, tril_b, tril_c, tril_d, labels="AUTO") #12 by 10 landscape
+```
+
+
+```{r}
+spatial_field_sd<-ggField_sd(IM3.r, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Reds")+ geom_polygon(data = usa, 
                                  aes(x=long, y = lat, group = group), 
                                  fill = NA, 
                                  color="black") +
@@ -335,10 +367,21 @@ tril_c<-ggregplot::ggField(IM3, Mesh, Groups = 1) +
       "-80" = "80°W",
       "-75" = "75°W",
       "-70" = "70°W"))
+
+plot_grid(tril_c, spatial_field_sd, labels="AUTO") #save 3 by 10 landscape
 ```
+
+
 ```{r}
-plot_grid(tril_a, tril_b, labels="AUTO")
-plot_grid(tril_a, tril_b, tril_c, tril_d, labels="AUTO") #12 by 1 landscape
+library(inlabru) 
+#masking the regions of water requires I have the boundaries as a spatialpolygons object
+ggplot()+gg(Mesh, color=IM3.r$summary.random$w$mean, mask=world_trans, nx=300, ny=300) #, mask=(usa+canada) #world or lakes
+world_trans<-st_transform(world, "ESRI:102003")
+ggplot()+gg(Mesh, color=IM3.r$summary.random$w$mean)+
+  geom_sf(data = world, fill = "NA") +
+  geom_sf(data = lakes, color = "grey", fill = "grey") +
+  coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
+  theme_bw()#+ theme(legend.position = c(0.15, 0.23))
 ```
 
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
