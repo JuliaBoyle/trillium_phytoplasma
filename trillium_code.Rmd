@@ -594,6 +594,7 @@ sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
 ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
 dput(summary(IM3), file="INLAsummary_IM3.txt", control="all")
 summary(IM3)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+summary(SpatialHostList[[1]]) #base model summary
 
 #saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
 #saveRDS(IM3, paste0("output/","IM3",".rds"))
