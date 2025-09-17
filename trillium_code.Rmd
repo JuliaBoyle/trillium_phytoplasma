@@ -567,6 +567,7 @@ Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # u
 Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1) #smaller triangles- use smaller triangles for publication
 plot(Mesh)
 points(Locations, col = "red", pch = 2)
+save(Mesh, file = "trillium_inla_mesh.Rdata") #!!!
 # Making the A matrix
 HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
 Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662. This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
