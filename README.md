@@ -1,14 +1,12 @@
 # The ecological dynamics and consequences of phytoplasma in a spring ephemeral
 
-Welcome to the repository of code and data for the trillium phytoplasma project.
+## Description of the data and file structure
+
+This repository contains the field data collected from Koffler Scientific Reserve, summaries of spatial models resulting from iNaturalist data, and the files containing R code for analysis.
 
 trillium_code.rmd should have all the code required for analysis. Other rmd files have relevant code that we've used along the way but may be outdated.
 
 Data can be downloaded from the data folders. All data and code is also available on Dryad at DOI: 10.5061/dryad.fqz612k5d
-
-## Description of the data and file structure
-
-This repository contains the field data collected from Koffler Scientific Reserve, summaries of spatial models resulting from iNaturalist data, and the files containing R code for analysis.
 
 ## Files and variables
 
