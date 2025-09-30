@@ -78,13 +78,13 @@ fig3B<-trilliumY %>% group_by(Total_adult_trilliums, Total_infec_trilliums, Year
 cor.test(trillium$Total_trilliums, trillium$Freq_hemiptera_total)
 summary(trillium$Freq_hemiptera_total)
 fig3C<-trillium %>% 
-  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab(expression('Density of all trillium (no./m'^2* ')'))+ ylab("Proportion of all trillium with hemiptera")+labs(subtitle = "r = -0.476, p < 0.001")
+  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", se=F, color="darkgreen")+theme_cowplot()+xlab(expression('Density of all trillium (no./m'^2* ')'))+ ylab("Proportion of all trillium with hemiptera")+labs(subtitle = "r = -0.476, p < 0.001")
 
 cor.test(trillium$Freq_hemiptera_adults, trillium$Freq_infection_of_adults)
 summary(trillium$Freq_hemiptera_adults)
 summary(trillium$Freq_infection_of_adults)
 fig3D<-trillium %>%
-  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="darkgreen")+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()+labs(subtitle = "r = 0.334, p = 0.006")+coord_cartesian(ylim = c(0, NA))
+  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="darkgreen", se=FALSE)+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()+labs(subtitle = "r = 0.334, p = 0.006")+ylim(0, NA)
 
 plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("A", "B", "C", "D"))  #10 by 10
 ```
@@ -96,9 +96,6 @@ trillium %>%ggplot(aes(x=car::logit(Freq_hemiptera_adults, adjust = 0.001), y=ca
 
 trillium %>%
   ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="glm", formula = y ~ x, method.args = list(family = "binomial"), color="darkgreen")+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()
-
-trillium %>%
-  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="darkgreen", se=FALSE)+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()+labs(subtitle = "r = 0.334, p = 0.006")+ylim(0, NA)
 ```
 
 
@@ -144,26 +141,6 @@ summary(lmer(log(Sepal_length_cm)~Infection_chr+(1|Population), data=traits))
 Anova(lmer(log(Sepal_length_cm)~Infection_chr+(1|Population), data=traits), type=3)
 ```
 
-## Sticky trap data
-```{r}
-sticky<-read.csv("Trillium_Field_Data - Sticky traps.csv")
-head(sticky)
-str(sticky)
-sticky$Adult_Trillium_density<-factor(sticky$Adult_Trillium_density, levels=c("Low", "Mid", "High"))
-sticky_noout<-sticky %>% filter(Outlier=="No")
-```
-
-```{r}
-sticky_noout %>% ggplot(aes(x=Adult_Trillium_density, y=Num_sapsuckers_on_trap))+geom_boxplot()
-sticky_noout %>% ggplot(aes(x=Adult_Trillium_density, y=Total_insects_on_trap))+geom_boxplot()
-sticky_noout %>% ggplot(aes(x=Forest, y=Num_sapsuckers_on_trap, fill=Adult_Trillium_density))+geom_boxplot()+theme_cowplot()+scale_fill_grey(name="Density of flowering trillium", start=0.5, end=1)+labs(x = "Forest population",y = "Hemiptera caught (no.)")+scale_x_discrete(labels=c("Old growth", "Secondary"))
-sticky_noout %>% ggplot(aes(x=Forest, y=Total_insects_on_trap, color=Adult_Trillium_density))+geom_boxplot()
-#this mainly shows that old forest had more bugs than secondary forest, and that intermediate trillium density plots tended to have the most insects
-
-sticky_noout %>% ggplot(aes(x=Num_sapsuckers_on_trap, y=Freq_infection_of_adults, color=Adult_Trillium_density))+geom_point()+theme_cowplot()
-sticky_noout %>% ggplot(aes(x=Num_sapsuckers_on_trap, y=Freq_hemiptera_total, color=Adult_Trillium_density))+geom_point()+theme_cowplot()
-```
-
 ## Seed counts 2024
 ```{r}
 #actual seed counts only
@@ -203,26 +180,10 @@ plyr::ddply(seed_comparison1, c("Seed_count_real_or_predicted"), summarise,
 ```
 
 ```{r}
-#This is the original code for 2024 seed count fitness data.
-#We collected morphology and seed count data from 100 infected trillium (only 81 could have their seeds counted).
-#Paired with each infected trillium, we measured the morphology of the closest asymptomatic trillium. 
-#To predict seed counts of asymptomatic trillium based on size, we measured and counted the seeds of 100 trillium chosen to maximize natural variation.
-#Here, we predict the number of seeds the symptomatic and asymptomatic plants made based on their size. 
-library(googlesheets4)
-### ALL DATA UPLOADS & MANIPULATION ###
-disease_data <- read_sheet("https://docs.google.com/spreadsheets/d/1gXR8N1B6rqh5kZQsVuEUjdG6C9Wib4BAoBgX3hq3ah0/edit?gid=1676613822#gid=1676613822", sheet = "disease")
+all_data <-read.csv('Trillium_data_collection - 2024 demography.csv')
 
-healthy_data <- read_sheet("https://docs.google.com/spreadsheets/d/1gXR8N1B6rqh5kZQsVuEUjdG6C9Wib4BAoBgX3hq3ah0/edit?gid=1676613822#gid=1676613822", sheet = "healthy")
-
-all_data <- rbind(disease_data, healthy_data) %>%
+all_data <- all_data %>%
   filter(!is.na(Date))
-
-summary(all_data$pair_number)
-#adding a column to pair the data
-all_data$pair_number <- all_data$ID
-all_data$pair_number <- substr(all_data$pair_number, start = 2, stop = nchar(all_data$pair_number))
-all_data$pair_number <- as.numeric(all_data$pair_number)
-# MB: making this a character string instead of numeric values just in case that was causing the problem with the models
 
 #adding a column to make D=1, H=0
 all_data$DH_number <- all_data$DH_type
@@ -230,7 +191,6 @@ all_data$DH_number[all_data$DH_number == "D"] <- 1
 all_data$DH_number[all_data$DH_number == "H"] <- 0
 all_data$DH_number = as.numeric(all_data$DH_number)
 
-##################################################################################################
 # Demography data from 2024 with more age classes
 #juvenile count= no. plants with 3 leaves but no flower
 #adult count = no. plants with 3 leaves and flower but no infection
@@ -440,7 +400,7 @@ tril_a<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
   geom_sf(data = freqs_with_polys, aes(fill = n), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white", "#CCFFFF","#3399FF", "navy"),values = c(0,0.0000010,0.5,1), name="Observations") +
+  scale_fill_gradientn(colours = c("white", "#CCFFFF","#3399FF", "navy"),values = c(0,0.00000000000000010,0.5,1), name="Observations") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()+ theme(legend.position = c(0.15, 0.23))+xlab("Longitude")+ylab("Latitude")
 
@@ -652,7 +612,9 @@ canada <- map_data("worldHires","Canada")
 
 nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
-tril_c<-ggregplot::ggField(IM3, Mesh, Groups = 1) +
+tril_c<-#
+  
+ggregplot::ggField(IM3, Mesh, Groups = 1) +
   scale_fill_brewer(palette = "Greens")+ geom_polygon(data = usa, 
                                  aes(x=long, y = lat, group = group), 
                                  fill = NA, 
@@ -666,7 +628,7 @@ tril_c<-ggregplot::ggField(IM3, Mesh, Groups = 1) +
       "-85" = "85°W",
       "-80" = "80°W",
       "-75" = "75°W",
-      "-70" = "70°W"))#+scale_y_discrete(labels = c("55" = "55°N", "50" = "50°N", "45" = "45°N","40" = "40°N", "35" = "35°N","30" = "30°N"))
+      "-70" = "70°W"))#+scale_y_discrete(labels = c("30" = "30°N","35" = "35°N","40" = "40°N","45" = "45°N","50" = "50°N","55" = "55°N"))
 ```
 
 ####Figure 4
