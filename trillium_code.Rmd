@@ -384,6 +384,8 @@ freq_per_poly = grid_assignments %>%
 freqs_with_polys = st_join(fishnet_grid_sf, freq_per_poly) %>% 
   filter(!is.na(n))
 plot(freqs_with_polys)
+freqs_with_polys$n
+freqs_with_polys$freq_infected
 
 world = ne_countries(scale = "large", returnclass = "sf", continent = "north america")
 lakes = ne_download(scale = "medium", type = "lakes", category = "physical")
@@ -392,15 +394,15 @@ tril_b<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
   geom_sf(data = freqs_with_polys, aes(fill = freq_infected), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white", "#CCFF99", "darkgreen"), values = c(0,0.000001,1), name="Proportion \ninfected") +
+  scale_fill_gradientn(colours = c("white", "#33FF99","#00CC66","black"), name="Proportion \ninfected") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()+ theme(legend.position = c(0.15, 0.23))+xlab("Longitude")+ylab("Latitude")
 
 tril_a<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
-  geom_sf(data = freqs_with_polys, aes(fill = n), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white", "#CCFFFF","#3399FF", "navy"),values = c(0,0.00000000000000010,0.5,1), name="Observations") +
+  geom_sf(data = (freqs_with_polys %>% filter(n>0)), aes(fill = as.numeric(n)), alpha = 0.8, color = "lightgrey") +
+  scale_fill_gradientn(colours = c( "#CCFFFF","#3399FF", "navy"), name="Observations") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()+ theme(legend.position = c(0.15, 0.23))+xlab("Longitude")+ylab("Latitude")
 
@@ -530,7 +532,9 @@ points(Locations, col = "red", pch = 2)
 save(Mesh, file = "trillium_inla_mesh.Rdata") #!!!
 # Making the A matrix
 HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
-Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662. This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
+Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662.
+Range_prior<-14.72662
+#This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
 Hosts.spde = INLA::inla.spde2.pcmatern(mesh = Mesh, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
 w.Host <- INLA::inla.spde.make.index('w', n.spde = Hosts.spde$n.spde) # making the w
 
@@ -560,23 +564,23 @@ IM3 <- INLA::inla(f3, # SPDE random effect
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
             control.predictor = list(A = INLA::inla.stack.A(StackHost)))
-IM3<-inla.rerun(IM3) #I have the IM3 output saved on google drive if you want to play around with it (without having to run the model itself!)
-SpatialHostList <- list(IM1, IM3) #I also have this object saved and available
+IM3.r<-inla.rerun(IM3) #rerun to make sure values are as stable as possible
+SpatialHostList <- list(IM1, IM3.r) 
 
 sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
-4676.302-4356.507 #Spatial model is better!
+4705.980-4380.141 #Spatial model is better by DIC 325.84!
 ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
-dput(summary(IM3), file="INLAsummary_IM3.txt", control="all")
-summary(IM3)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+dput(summary(IM3.r), file="INLAsummary_IM3.txt", control="all")
+summary(IM3.r)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
 summary(SpatialHostList[[1]]) #base model summary
 
-IM3$summary.fitted.values #the predicted infection
-IM3$summary.random #this is how the random effects (n=205) affected likelihood of an observation being infected
-IM3$summary.hyperpar #overall summary of random effects of space
-IM3$summary.fixed #this is how the fixed effects (n=10) affected likelihood of an observation being infected
+IM3.r$summary.fitted.values #the predicted infection
+IM3.r$summary.random #this is how the random effects (n=205) affected likelihood of an observation being infected
+IM3.r$summary.hyperpar #overall summary of random effects of space
+IM3.r$summary.fixed #this is how the fixed effects (n=10) affected likelihood of an observation being infected
 
 #saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
-#saveRDS(IM3, paste0("output/","IM3",".rds"))
+#saveRDS(IM3.r, paste0("output/","IM3.r",".rds"))
 ```
 
 ####Visuals
@@ -601,7 +605,7 @@ tril_d
 
 Spatial fields
 ```{r}
-inla.spde2.result(inla=IM3, name="w", spde=Hosts.spde, do.transform = T) #extracting info on the spatial field, while transforming results back from internal model scale
+inla.spde2.result(inla=IM3.r, name="w", spde=Hosts.spde, do.transform = T) #extracting info on the spatial field, while transforming results back from internal model scale
 #the higher the Kappa, the smoother the spatial autocorrelation structure. Shorter range and smaller kappa indicate higher autocorrelation between closely related points
 ```
 
@@ -612,10 +616,8 @@ canada <- map_data("worldHires","Canada")
 
 nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
-tril_c<-#
-  
-ggregplot::ggField(IM3, Mesh, Groups = 1) +
-  scale_fill_brewer(palette = "Greens")+ geom_polygon(data = usa, 
+tril_c<-ggregplot::ggField(IM3.r, Mesh, Groups = 1) +
+  scale_fill_brewer(palette = "Greens", name="Random \nEffect \nMean")+ geom_polygon(data = usa, 
                                  aes(x=long, y = lat, group = group), 
                                  fill = NA, 
                                  color="black") +
@@ -628,7 +630,7 @@ ggregplot::ggField(IM3, Mesh, Groups = 1) +
       "-85" = "85°W",
       "-80" = "80°W",
       "-75" = "75°W",
-      "-70" = "70°W"))#+scale_y_discrete(labels = c("30" = "30°N","35" = "35°N","40" = "40°N","45" = "45°N","50" = "50°N","55" = "55°N"))
+      "-70" = "70°W"))#scale_y_discrete(labels = c("30" = "30°N","35" = "35°N","40" = "40°N","45" = "45°N","50" = "50°N","55" = "55°N"))
 ```
 
 ####Figure 4
