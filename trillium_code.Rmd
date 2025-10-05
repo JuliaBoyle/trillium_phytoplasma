@@ -6,8 +6,7 @@ output: html_document
 ---
 # Field data
 
-## Frequency of infection and hemiptera
-look at prevalence vs presence more? 
+## Load data and packages
 
 ```{r}
 library(tidyverse)
@@ -17,32 +16,39 @@ library(car)
 library(GLMMadaptive)
 library(pscl)
 library(lmerTest)
+library(ggeffects)
 
-trillium<-read.csv("Trillium_Field_Data_Frequency.csv")#just 2023
-trillium<-trillium %>% mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
-trilliumY<-read.csv("Trillium_Field_Data - Multiyear.csv")#includes 2018 and 2023
-trilliumY
-trilliumY$Year<-as.factor(trilliumY$Year)
-trilliumY
+trillium<-read.csv("Field_data/Trillium_Field_Data_Frequency.csv") %>% #just 2023
+  mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
+
+trilliumY<-read.csv("Field_data/Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
+ mutate(Year = as.factor(Year),
+        Infection_presence=ifelse(Freq_infection_of_adults>0,"Yes","No"))
+
 trillium_long<-trilliumY %>% 
   pivot_longer(cols=8:13,
   names_to = c("Status", "Hemiptera_presence"),
   names_sep = "_",
   values_to = "count"
-)
-trilliumY<-trilliumY %>% mutate(Infection_presence=ifelse(Freq_infection_of_adults>0,"Yes","No"))
+) %>% 
+  mutate(Infection=as.integer(ifelse(Status=="Infec", "1", "0")),
+         Year=as.factor(Year))
 
-trillium_long<-trillium_long %>% mutate(Infection= ifelse(Status=="Infec", "1", "0"))
 str(trillium_long)
-trillium_long$Infection<-as.integer(trillium_long$Infection)
-trillium_long$Year<-as.factor(trillium_long$Year)
+
 trillium_long_adults<-trillium_long %>% 
   filter(Status!="Young")
+
 trillium_long
+
 ```
 
-Zero-inflated poisson models
+## Frequency of infection, density, and hemiptera
+
+Zero-inflated poisson models looking at infection as a function of density and hemiptera frequency
+
 ```{r}
+
 #2018 and 2023
 ##with random effects
 head(trilliumY)
@@ -61,32 +67,87 @@ summary(MM2) #loglik -83.28, freq hemip 0.057 in count model
 ##without random effects
 summary(zeroinfl(Total_infec_trilliums~Freq_hemiptera_adults+Total_adult_trilliums, data=trillium)) #log lik -82.6, sig more likely to get zero infection in high adult density , marginal hemip in count model
 
-#correlations
-cor.test(trillium$Total_trilliums, trillium$Freq_hemiptera_total) #-0.475946
-cor.test(trillium$Freq_infection_of_adults, trillium$Freq_hemiptera_adults) #0.3341377
-cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
+
+#Association between trillium density and the proportion of trillium with hemiptera
+
+# cor.test(trillium$Total_trilliums, trillium$Freq_hemiptera_total) #-0.475946
+plot(trillium$Total_trilliums, trillium$Freq_hemiptera_total) 
+mm1 = glm(Freq_hemiptera_total ~ Total_trilliums, weights = Total_trilliums, data = trillium, family = "binomial")
+summary(mm1)
+
+# Association between the frequency of hemiptera and frequency of infection (adults)
+
+# cor.test(trillium$Freq_infection_of_adults, trillium$Freq_hemiptera_adults) #0.3341377
+plot(trillium$Freq_hemiptera_adults, trillium$Freq_infection_of_adults) #0.3341377
+mm2 = glm(Freq_infection_of_adults ~ Freq_hemiptera_adults, weights = Total_trilliums, data = trillium, family = "binomial")
+summary(mm2)
+
+
+
 ```
 
 ## Figure 3
 ```{r}
-fig3A<-trilliumY %>% group_by(Total_adult_trilliums, Infection_presence, Year) %>% tally() %>% ggplot(aes(Total_adult_trilliums, fill = Infection_presence, colour = Infection_presence)) +
-  geom_density(alpha = 0.1)+facet_grid(~Year)+theme_cowplot()+xlab(expression('Density of flowering trillium (no./m'^2* ')'))+ylab("Density of sampled plots")+scale_fill_manual(name="Infection presence",values=c("grey", "darkgreen"))+scale_colour_manual(name="Infection presence",values=c("grey", "darkgreen"))+labs(subtitle = "Year p = 0.038, Trillium density p = 0.010")+ theme(legend.position = "inside",legend.position.inside = c(0.25, 0.8))
 
-fig3B<-trilliumY %>% group_by(Total_adult_trilliums, Total_infec_trilliums, Year) %>% tally() %>% ggplot(aes((Total_adult_trilliums), y=Total_infec_trilliums)) +
-  geom_point(alpha=0.5)+facet_grid(~Year)+theme_cowplot()+xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+ylab("Number of infected trillium")+labs(subtitle = "Year p = 0.706, Trillium density p = 0.069")
 
-cor.test(trillium$Total_trilliums, trillium$Freq_hemiptera_total)
-summary(trillium$Freq_hemiptera_total)
-fig3C<-trillium %>% 
-  ggplot(aes(x=Total_trilliums, y=Freq_hemiptera_total))+geom_point()+geom_smooth(method="lm", se=F, color="darkgreen")+theme_cowplot()+xlab(expression('Density of all trillium (no./m'^2* ')'))+ ylab("Proportion of all trillium with hemiptera")+labs(subtitle = "r = -0.476, p < 0.001")
+fig3A<-trilliumY %>% 
+  group_by(Total_adult_trilliums, Infection_presence, Year) %>% 
+  tally() %>% 
+  ggplot(aes(Total_adult_trilliums, fill = Infection_presence, colour = Infection_presence)) + 
+  geom_density(alpha = 0.1)+
+  facet_grid(~Year)+
+  theme_cowplot()+
+  xlab(expression('Density of flowering trillium (no./m'^2* ')'))+
+  ylab("Density of sampled plots")+
+  scale_fill_manual(name="Infection presence",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infection presence",values=c("grey", "darkgreen"))+
+  labs(subtitle = "Year p = 0.038, Trillium density p = 0.010")+ 
+  # stats from model MM4
+  theme(legend.position = "inside",legend.position.inside = c(0.25, 0.8)); fig3A
 
-cor.test(trillium$Freq_hemiptera_adults, trillium$Freq_infection_of_adults)
-summary(trillium$Freq_hemiptera_adults)
-summary(trillium$Freq_infection_of_adults)
-fig3D<-trillium %>%
-  ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="lm", color="darkgreen", se=FALSE)+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()+labs(subtitle = "r = 0.334, p = 0.006")+ylim(0, NA)
+fig3B<-trilliumY %>% 
+  group_by(Total_adult_trilliums, Total_infec_trilliums, Year) %>% 
+  tally() %>% 
+  ggplot(aes((Total_adult_trilliums), y=Total_infec_trilliums)) +
+  geom_point(alpha=0.5)+
+  facet_grid(~Year)+
+  theme_cowplot()+
+  xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
+  ylab("Number of infected trillium")+
+  labs(subtitle = "Year p = 0.706, Trillium density p = 0.069"); fig3B
+  # stats from model MM4
+
+
+p1 = ggpredict(mm1, terms = "Total_trilliums[all]")
+fig3C<- 
+  ggplot()+
+  geom_point(data = trillium, aes(x=Total_trilliums, y=Freq_hemiptera_total))+  
+  geom_line(data = p1, aes(x = x, y = predicted), color="darkgreen") +
+  geom_ribbon(data = p1, aes(x = x, ymin = conf.low, ymax = conf.high), fill="darkgreen", alpha = 0.2) +
+  theme_cowplot()+
+  xlab(expression('Density of all trillium (no./m'^2* ')'))+ 
+  ylab("Proportion of all trillium with hemiptera")+
+  labs(subtitle = "p < 0.001"); fig3C
+# stats from model mm1
+
+
+p2 = ggpredict(mm2, terms = "Freq_hemiptera_adults[all]")
+fig3D<-
+  ggplot() +
+  geom_point(data = trillium, aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults)) +
+  geom_line(data = p2, aes(x = x, y = predicted), color="darkgreen") +
+  geom_ribbon(data = p2, aes(x = x, ymin = conf.low, ymax = conf.high), fill="darkgreen", alpha = 0.2) +
+  xlab("Proportion of flowering trillium with hemiptera")+
+  ylab("Proportion of flowering trillium infected")+ 
+  theme_cowplot()+
+  labs(subtitle = "p < 0.001")+
+  ylim(0, NA); fig3D
+# stats from model mm2
 
 plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("A", "B", "C", "D"))  #10 by 10
+ggsave("figures/Fig3.png", height = 10, width = 10)
+ggsave("figures/Fig3.pdf", height = 10, width = 10)
+
 ```
 Alternate Figure 3D (Figure S3)
 ```{r}
@@ -222,6 +283,16 @@ ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_three))+geom_point()
 
 ## Figure 2
 ```{r}
+
+
+
+#Association between adult infection frequencies and the ratio of young plants to adults
+
+cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
+plot(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
+mm3 = lm(log(Young_to_repro_ratio) ~ Freq_infection_of_adults, data = trillium)
+summary(mm3)
+
 #making the demography data plot from 2023
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio)
 demography2023<-trillium %>% 
