@@ -145,8 +145,8 @@ fig3D<-
 # stats from model mm2
 
 plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("A", "B", "C", "D"))  #10 by 10
-ggsave("figures/Fig3.png", height = 10, width = 10)
-ggsave("figures/Fig3.pdf", height = 10, width = 10)
+ggsave("Fig3.png", height = 10, width = 10)
+ggsave("Fig3.pdf", height = 10, width = 10)
 
 ```
 Alternate Figure 3D (Figure S3)
@@ -435,7 +435,7 @@ dat_sf = st_as_sf(inat_clean, coords = c("longitude", "latitude")) %>%
 # Reproject to equal area projection
 dat_ea = st_transform(dat_sf, crs = "ESRI:102003")
 # Make a grid of polygons that encompass the observation points
-# Choosing an arbitrary 5 km grid size
+# Choosing an arbitrary 50 km grid size
 area_fishnet_grid = st_make_grid(dat_ea, c(5e4, 5e4), what = "polygons", square = FALSE)
 
 # Convert to sf and add grid ID
@@ -465,7 +465,7 @@ tril_b<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
   geom_sf(data = freqs_with_polys, aes(fill = freq_infected), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white", "#33FF99","#00CC66","black"), name="Proportion \ninfected") +
+  scale_fill_gradientn(colours = c("white","#00CC66","black"),values = c(0,0.000001,0.5,1), name="Proportion \ninfected") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()+ theme(legend.position = c(0.15, 0.23))+xlab("Longitude")+ylab("Latitude")
 
@@ -702,6 +702,8 @@ tril_c<-ggregplot::ggField(IM3.r, Mesh, Groups = 1) +
       "-80" = "80°W",
       "-75" = "75°W",
       "-70" = "70°W"))#scale_y_discrete(labels = c("30" = "30°N","35" = "35°N","40" = "40°N","45" = "45°N","50" = "50°N","55" = "55°N"))
+
+tril_c 
 ```
 
 ####Figure 4
