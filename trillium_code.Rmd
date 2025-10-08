@@ -283,9 +283,6 @@ ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_three))+geom_point()
 
 ## Figure 2
 ```{r}
-
-
-
 #Association between adult infection frequencies and the ratio of young plants to adults
 
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
@@ -330,38 +327,52 @@ library(tmap)
 library(predicts)
 library(tidyverse)
 library(cowplot)
+library(dplyr)
+```
+
+## Joining gbif data with inaturalist data
+
+GBIF: iNaturalist contributors, iNaturalist (2025). iNaturalist Research-grade Observations. iNaturalist.org. Occurrence dataset https://doi.org/10.15468/ab3s5x accessed via GBIF.org on 2025-10-07.
+
+iNaturalist data was downloaded on 2025-10-07 and subset to only "CC0","CC-BY","CC-BY-NC". It contains important observation fields.
+```{r}
+library(readr)
+gbif <- read_delim("occurrence.txt", delim = "\t") #36504 observations
+gbif_select<-dplyr::select(gbif, gbifID,license,rightsHolder,institutionCode, collectionCode, datasetName, occurrenceID)
+inat<- read.csv("iNat_alltrilliums_2025_10_07_625587.csv")#36569 observations
+Inat_m<-merge(inat, gbif_select, by.x="url", by.y="occurrenceID") #36497 observations
 ```
 
 ```{r}
-#inat<-read.csv("iNat_alltrilliums_2023_07_05.csv") #only up until 2023
-inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
+#inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
 head(inat)
 
 set.seed(2025)
-inat_cleaned = inat %>% 
+inat_cleaned = Inat_m %>% 
   # Adding positional accuracy filter to see if that helps deal with observations in lakes
   filter(!is.na(latitude), !is.na(longitude), !is.na(public_positional_accuracy)) %>% 
   filter(public_positional_accuracy < 10000) %>% 
   dplyr::mutate(infected = `field.phytoplasma.infection.`) %>% 
   mutate(infected = if_else(is.na(infected), "No", infected)) %>% 
   # Drop european and puerto rico observations
-  filter(latitude > 20, longitude < -65) %>%  #at this point 32,649 observations
+  filter(latitude > 20, longitude < -65) %>%  #at this point 27,803 observations
+  #filter(license %in% c("CC0","CC-BY","CC-BY-NC")) %>% 
   # Group by user and subset to 15 observations per user
   group_by(user_login) %>% 
-  slice_sample(n = 15, replace = FALSE) #29,412 observations
+  slice_sample(n = 15, replace = FALSE) #24,103 observations
 
 inat_clean <- clean_coordinates(x = inat_cleaned, 
                            lon = "longitude", 
                            lat = "latitude",
                            species = "scientific_name",
                            tests = c("centroids",
-                                    "equal", "zeros","institutions", "duplicates")) #28,371 observations
+                                    "equal", "zeros","institutions", "duplicates")) #23,218 observations
 inat_clean=inat_clean %>% filter(.summary==TRUE) #only include observations that have no suspect issues
 inat_clean=inat_clean %>% mutate(infected=ifelse(grepl("Yes", infected), "1", "0"))
 inat_clean$infected
 
-inat%>% filter( field.phytoplasma.infection.=="Yes") #846
-inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #526 after filtering out stuff with clean_coordinates
+inat%>% filter( field.phytoplasma.infection.=="Yes") #637
+inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #384 after filtering out stuff with clean_coordinates
 ```
 ```{r}
 inat_clean_tally<-inat_clean %>% group_by(user_login) %>% tally()
@@ -369,13 +380,8 @@ mean(inat_clean_tally$n)
 median(inat_clean_tally$n)
 
 inatinfec<-inat_clean %>% filter( field.phytoplasma.infection.=="Yes") #make another dataset of infected points
-inatinfec %>% group_by(user_login) %>% tally() #vast majority of users contributed less than 6 infected observations, one person contributed 12
+inatinfec %>% group_by(user_login) %>% tally() #vast majority of users contributed less than 6 infected observations
 inat_clean %>% group_by(user_login) %>% tally()
-
-inat_clean %>% filter(observed_on>'2020-01-01') #23,385
-23385/28371
-
-inat_clean %>% filter(observed_on>'2025-01-01')
 ```
 
 ## Extracting coordinate data
@@ -410,8 +416,6 @@ crop_data<- crop(x = crop_data, y = sample_extent)
 plot(crop_data[[1]])
 cropdata_extract<- terra::extract(x = crop_data, y = as.matrix(inat_clean[, c("longitude", "latitude")]))
 points <- cbind(points_climate, cropdata_extract)
-
-#stonefruit<-crop_monfreda(crop="stonefruitnes", var="area_ha",  path = "data/") #download failed?
 
 footprint<-footprint(year=2009, path = "data/")
 footprint_crop<- crop(x = footprint, y = sample_extent) 
@@ -492,18 +496,18 @@ inc.lag <- lag.listw(lw, freqs_with_polys$n_infected)
 plot(inc.lag ~ freqs_with_polys$n_infected, pch=16, asp=1)
 M1 <- lm(inc.lag ~ freqs_with_polys$n_infected)
 abline(M1, col="blue")
-coef(M1)[2] #0.4040173
+coef(M1)[2] #0.3641648
 #this slope is Morans I: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
 #a positive Moran’s I value suggests clustering whereas a negative Moran’s I value suggests dispersion
 inc.lag.freq <- lag.listw(lw, freqs_with_polys$freq_infected)
 plot(inc.lag.freq ~ freqs_with_polys$freq_infected, pch=16, asp=1)
 M1.freq <- lm(inc.lag.freq ~ freqs_with_polys$freq_infected)
 abline(M1.freq, col="blue")
-coef(M1.freq)[2] #0.1074369
+coef(M1.freq)[2] #0.03981404
 
-moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.4122603, infections are pretty clustered in space
-moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.1084906
-moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3111099
+moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.3757675, infections are pretty clustered in space
+moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.04007135
+moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3079917
 
 MC.ninfec<- moran.mc(freqs_with_polys$n_infected, lw, nsim=999, alternative="greater")
 MC.ninfec
@@ -526,39 +530,11 @@ inat_grid<-inat_grid %>% dplyr::select(grid_id, id, n, n_infected, freq_infected
 inat_full<-merge(inat_grid, points, by.x="id", by.y="id")
 inat_full$infected<-as.numeric(inat_full$infected)
 #inat_full$footprint<-inat_full$`wildareas-v3-2009-human-footprint`
-inat_full$Year<-substring(inat_full$observed_on,1,4)
+inat_full$Year<-substring(inat_full$created_at,1,4)
+inat_full %>% filter(Year>'2019')
+(20578/23218)*100 #88.6% of observations are recorded after 2020
 #str(inat_full)
 ```
-```{r}
-#add total trillium number as a layer to the raster 
-r <- rast(xmin=-100.875, xmax=-62.125, ymin=31.125, ymax=49.875, ncols=4650, nrows=2250, crs = crs(geo_data_test))
-# you need to provide a function 'fun' for when there are multiple points per cell
-inat_sub_matrix<-as.matrix(inat_full%>% select(longitude, latitude,n))
-trillium_number <- rasterize(inat_sub_matrix[,1:2], r, inat_sub_matrix[,3], fun=max)
-trillium_number_resampled <- resample(trillium_number, geo_data_test)
-names(trillium_number_resampled)<-"n"
-plot(trillium_number_resampled)
-geo_data_test<-c(geo_data_test, trillium_number_resampled)
-
-points<-SpatialPoints(inat_sub_matrix[, c('longitude','latitude')], inat_sub_matrix[, c('n')])
-pixels<-SpatialPixelsDataFrame(points, tolerance=0.916421, points@data)
-raster<-raster(pixels[,'n'])
-
-#add lat and long as a layer to the raster??
-r <- rast(xmin=-100.875, xmax=-62.125, ymin=31.125, ymax=49.875, ncols=4650, nrows=2250, crs = crs(geo_data_test))
-longitude<-latitude<-r
-longitude[]<-xFromCell(r, 1:ncell(r))
-names(longitude)<-"longitude"
-latitude[]<-yFromCell(r, 1:ncell(r))
-names(latitude)<-"latitude"
-plot(longitude)  
-plot(latitude)  
-geo_data_test<-c(geo_data_test, longitude)
-geo_data_test<-c(geo_data_test, latitude)
-names(geo_data_test)
-#cellFromXY(r)
-```
-
 ### INLA
 https://ourcodingclub.github.io/tutorials/inla/
 https://ourcodingclub.github.io/tutorials/spatial-modelling-inla/
@@ -573,27 +549,30 @@ library(INLAspacetime)
 library(usdm)
 head(inat_full)
 
+#GBIF VERSION
 ##########################################################################
-which(is.na(inat_full$wc2.1_30s_bio_1)) #41 uninfected trillium near quebec and montreal don't have associated bioclim data for some reason. we need to exclude them for INLA
+which(is.na(inat_full$wc2.1_30s_bio_1)) #some 33 trillium near quebec and montreal don't have associated bioclim data for some reason. we need to exclude them for INLA
 inat_full[which(is.na(inat_full$wc2.1_30s_bio_1)),]
-inat_full_complete = inat_full[complete.cases(inat_full[53:73]),]
+inat_full_complete = inat_full[complete.cases(inat_full[60:80]),] #only use observations with complete bioclim data
 ##########################################################################
-
 phen <- c("longitude", "latitude") # Base columns with spatial information we'll need
 
 resp <- "infected" # Response variable
 
-covar <- c("n","wc2.1_30s_bio_1",  "wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_5","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_11","wc2.1_30s_bio_12","wc2.1_30s_bio_13","wc2.1_30s_bio_14","wc2.1_30s_bio_15","wc2.1_30s_bio_16","wc2.1_30s_bio_17","wc2.1_30s_bio_18","wc2.1_30s_bio_19","cropland", "footprint")
+covar <- c("n","wc2.1_30s_bio_1",  "wc2.1_30s_bio_2","wc2.1_30s_bio_3","wc2.1_30s_bio_4","wc2.1_30s_bio_5","wc2.1_30s_bio_6","wc2.1_30s_bio_7","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_11","wc2.1_30s_bio_12","wc2.1_30s_bio_13","wc2.1_30s_bio_14","wc2.1_30s_bio_15","wc2.1_30s_bio_16","wc2.1_30s_bio_17","wc2.1_30s_bio_18","wc2.1_30s_bio_19","cropland", "footprint") #start with all possible covariates
 
 #Selecting final variables for the model
 ggregplot::INLAModelSel(resp, covar, Family="binomial", Data=inat_full_complete) #removes variables that improve DIC by at least 2
-  #[1] "Losing wc2.1_30s_bio_18"[1] "Run 2"[1] "Losing wc2.1_30s_bio_1"[1] "Run 3"[1] "Losing wc2.1_30s_bio_13"[1] "Run 4" "Losing wc2.1_30s_bio_16"[1] "Run 5[1]   "Losing wc2.1_30s_bio_17"[1] "Run 6"[1] "Losing n"[1] "Run 7"[1] "Losing wc2.1_30s_bio_5"[1] "Run 8"[1] "Losing footprint"[1] "Run 9"[1] "Losing   wc2.1_30s_bio_11"[1] "Run 10"[1] "Losing wc2.1_30s_bio_15"[1] "Run 11" 
-  #it removed n and footprint, but I want to keep them in the model due to a priori reasons
+  #it removed footprint, but I want to keep them in the model due to a priori reasons
+#keep n , wc2.1_30s_bio_2 , wc2.1_30s_bio_3 , wc2.1_30s_bio_4 , wc2.1_30s_bio_6 , wc2.1_30s_bio_7 , wc2.1_30s_bio_8 , wc2.1_30s_bio_9 , wc2.1_30s_bio_10 , wc2.1_30s_bio_11 , wc2.1_30s_bio_14 , wc2.1_30s_bio_15 , wc2.1_30s_bio_16 , wc2.1_30s_bio_19 ,  cropland
 
-vifcor(inat_full_complete %>% dplyr::select(n,wc2.1_30s_bio_2,wc2.1_30s_bio_3,wc2.1_30s_bio_4,wc2.1_30s_bio_6,wc2.1_30s_bio_7,wc2.1_30s_bio_8,wc2.1_30s_bio_9,wc2.1_30s_bio_10,wc2.1_30s_bio_12,wc2.1_30s_bio_14,wc2.1_30s_bio_19,cropland, footprint)) #remove vars 19, 7, 4, 12 due to multicollinearity #except var 3 still has REALLY HIGH VIF! Let's see what happens when we remove it
-vifcor(inat_full_complete %>% dplyr::select(n,wc2.1_30s_bio_2,wc2.1_30s_bio_6,wc2.1_30s_bio_8,wc2.1_30s_bio_9,wc2.1_30s_bio_10,wc2.1_30s_bio_14,cropland, footprint))#After removing var 3, all VIFs are under 5, which is great
+vifcor(inat_full_complete %>% dplyr::select(n , wc2.1_30s_bio_2 , wc2.1_30s_bio_3 , wc2.1_30s_bio_4 , wc2.1_30s_bio_6 , wc2.1_30s_bio_7 , wc2.1_30s_bio_8 , wc2.1_30s_bio_9 , wc2.1_30s_bio_10 , wc2.1_30s_bio_11 , wc2.1_30s_bio_14 , wc2.1_30s_bio_15 , wc2.1_30s_bio_16 , wc2.1_30s_bio_19 ,  cropland))
+#remove wc2.1_30s_bio_11, wc2.1_30s_bio_19, wc2.1_30s_bio_7, wc2.1_30s_bio_6, vars due to multicollinearity
+vifcor(inat_full_complete %>% dplyr::select(n , wc2.1_30s_bio_2 , wc2.1_30s_bio_3 , wc2.1_30s_bio_4 , wc2.1_30s_bio_8 , wc2.1_30s_bio_9 , wc2.1_30s_bio_10 , wc2.1_30s_bio_14 , wc2.1_30s_bio_15 , wc2.1_30s_bio_16 ,  cropland)) #remove var 3
+vifcor(inat_full_complete %>% dplyr::select(n , wc2.1_30s_bio_2 , wc2.1_30s_bio_4 , wc2.1_30s_bio_8 , wc2.1_30s_bio_9 , wc2.1_30s_bio_10 , wc2.1_30s_bio_14 , wc2.1_30s_bio_15 , wc2.1_30s_bio_16 ,  cropland)) #remove var 14
+vifcor(inat_full_complete %>% dplyr::select(n , wc2.1_30s_bio_2 , wc2.1_30s_bio_4 , wc2.1_30s_bio_8 , wc2.1_30s_bio_9 , wc2.1_30s_bio_10 , wc2.1_30s_bio_15 , wc2.1_30s_bio_16 ,  cropland)) #VIFs are under 5, which is great
 
-Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_6","wc2.1_30s_bio_8","wc2.1_30s_bio_9","wc2.1_30s_bio_10","wc2.1_30s_bio_14","cropland", "footprint")
+Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_4","wc2.1_30s_bio_8","wc2.1_30s_bio_9" , "wc2.1_30s_bio_10" , "wc2.1_30s_bio_15" , "wc2.1_30s_bio_16" ,  "cropland","footprint")
 
 #incorporating space
 Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # using the sampling locations
@@ -603,7 +582,7 @@ points(Locations, col = "red", pch = 2)
 save(Mesh, file = "trillium_inla_mesh.Rdata") #!!!
 # Making the A matrix
 HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
-Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #14.72662.
+Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #take lat long. result was 14.72662
 Range_prior<-14.72662
 #This is the null range prior. This method of determining the prior is found from code in https://doi.org/10.1098/rspb.2020.2655
 Hosts.spde = INLA::inla.spde2.pcmatern(mesh = Mesh, prior.range = c(Range_prior, 0.5), prior.sigma = c(.5, .5)) 
@@ -630,6 +609,7 @@ IM1 <- INLA::inla(f1, # Base model (no random effects)
             data = inla.stack.data(StackHost),
             control.compute = list(dic = TRUE),
             control.predictor = list(A = INLA::inla.stack.A(StackHost)))
+summary(IM1)
 IM3 <- INLA::inla(f3, # SPDE random effect 
             family = "binomial",
             data = inla.stack.data(StackHost),
@@ -639,21 +619,20 @@ IM3.r<-inla.rerun(IM3) #rerun to make sure values are as stable as possible
 SpatialHostList <- list(IM1, IM3.r) 
 
 sapply(SpatialHostList, function(f) f$dic$dic) #does space make it better?
-4705.980-4380.141 #Spatial model is better by DIC 325.84!
+3532.807-3302.752 #Spatial model is better by DIC 230.055!
 ggregplot::INLADICFig(SpatialHostList, ModelNames = c("Base", "SPDE")) #if DIC is smaller by >2, then suggests autocorrelation was important to include
 dput(summary(IM3.r), file="INLAsummary_IM3.txt", control="all")
 summary(IM3.r)#There are no P values in INLA. Importance or significance of variables can be deduced by examining the overlap of their 2.5% and 97.5% posterior estimates with zero.
+summary(SpatialHostList[[2]])
 summary(SpatialHostList[[1]]) #base model summary
 
 IM3.r$summary.fitted.values #the predicted infection
-IM3.r$summary.random #this is how the random effects (n=205) affected likelihood of an observation being infected
+IM3.r$summary.random #this is how the random effects (n=201) affected likelihood of an observation being infected
 IM3.r$summary.hyperpar #overall summary of random effects of space
 IM3.r$summary.fixed #this is how the fixed effects (n=10) affected likelihood of an observation being infected
-
 #saveRDS(SpatialHostList, paste0("output/","SpatialHostList",".rds"))
 #saveRDS(IM3.r, paste0("output/","IM3.r",".rds"))
 ```
-
 ####Visuals
 Model significances
 ```{r}
@@ -664,11 +643,12 @@ tril_d<-ggregplot::Efxplot(SpatialHostList)+scale_colour_discrete(labels=c("Spat
       "Intercept" = "Intercept",
       "n" = "Observation density",
       "wc2.1_30s_bio_2" = "Mean diurnal range",
-      "wc2.1_30s_bio_6" = "Min. temp. of coldest month",
+      "wc2.1_30s_bio_4"= "Temp. seasonality",
       "wc2.1_30s_bio_8" = "Mean temp. of wettest quart.",
       "wc2.1_30s_bio_9" = "Mean temp. of driest quart.",
       "wc2.1_30s_bio_10" = "Mean temp of warmest quart.",
-      "wc2.1_30s_bio_14" = "Precip. of driest month", 
+      "wc2.1_30s_bio_15"= "Precip. Seasonality",
+      "wc2.1_30s_bio_16"= "Precip. of Wettest Quarter",
       "cropland" = "Cropland",
       "footprint" = "Footprint" ))+scale_colour_manual(labels=c("SPDE","Base"),values=c("darkgreen", "grey"))
 tril_d
@@ -676,16 +656,9 @@ tril_d
 
 Spatial fields
 ```{r}
-inla.spde2.result(inla=IM3.r, name="w", spde=Hosts.spde, do.transform = T) #extracting info on the spatial field, while transforming results back from internal model scale
-#the higher the Kappa, the smoother the spatial autocorrelation structure. Shorter range and smaller kappa indicate higher autocorrelation between closely related points
-```
-
-```{r}
 set.seed(2025)
 usa <- map_data("state")
 canada <- map_data("worldHires","Canada")
-
-nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(x, "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
 tril_c<-ggregplot::ggField(IM3.r, Mesh, Groups = 1) +
   scale_fill_brewer(palette = "Greens", name="Random \nEffect \nMean")+ geom_polygon(data = usa, 
@@ -711,7 +684,7 @@ tril_c
 plot_grid(tril_a, tril_b, tril_c, tril_d, labels="AUTO") #12 by 10 landscape
 ```
 
-Spatial field standard deviation
+#### Supplemental figure: Spatial field standard deviation
 ```{r}
 #I modified the code from the package to get a version that gives me sd instead of mean. The function is on github as ggField_sd.R
 spatial_field_sd<-ggField_sd(IM3.r, Mesh, Groups = 1) +
@@ -731,16 +704,4 @@ spatial_field_sd<-ggField_sd(IM3.r, Mesh, Groups = 1) +
       "-70" = "70°W"))
 
 plot_grid(tril_c, spatial_field_sd, labels="AUTO") #save 3 by 10 landscape
-```
-
-```{r}
-library(inlabru) 
-#masking the regions of water requires I have the boundaries as a spatialpolygons object
-ggplot()+gg(Mesh, color=IM3.r$summary.random$w$mean, mask=world_trans, nx=300, ny=300) #, mask=(usa+canada) #world or lakes
-world_trans<-st_transform(world, "ESRI:102003")
-ggplot()+gg(Mesh, color=IM3.r$summary.random$w$mean)+
-  geom_sf(data = world, fill = "NA") +
-  geom_sf(data = lakes, color = "grey", fill = "grey") +
-  coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
-  theme_bw()#+ theme(legend.position = c(0.15, 0.23))
 ```
