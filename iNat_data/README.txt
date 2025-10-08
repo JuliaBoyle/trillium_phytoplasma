@@ -1,4 +1,4 @@
-Exported at 2025-03-14T16:25:50Z
+README file for "iNat_alltrilliums_2025_10_07_625587.csv"
 
 Query: quality_grade=research&identifications=any&taxon_id=55402&verifiable=true&spam=false
 
