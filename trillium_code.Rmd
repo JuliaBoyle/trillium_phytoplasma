@@ -18,10 +18,10 @@ library(pscl)
 library(lmerTest)
 library(ggeffects)
 
-trillium<-read.csv("Field_data/Trillium_Field_Data_Frequency.csv") %>% #just 2023
+trillium<-read.csv("Trillium_Field_Data_Frequency.csv") %>% #just 2023
   mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
 
-trilliumY<-read.csv("Field_data/Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
+trilliumY<-read.csv("Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
  mutate(Year = as.factor(Year),
         Infection_presence=ifelse(Freq_infection_of_adults>0,"Yes","No"))
 
@@ -41,6 +41,7 @@ trillium_long_adults<-trillium_long %>%
 
 trillium_long
 
+trilliumY %>% group_by(Year) %>% dplyr::select(Population) %>% unique()
 ```
 
 ## Frequency of infection, density, and hemiptera
@@ -81,14 +82,10 @@ summary(mm1)
 plot(trillium$Freq_hemiptera_adults, trillium$Freq_infection_of_adults) #0.3341377
 mm2 = glm(Freq_infection_of_adults ~ Freq_hemiptera_adults, weights = Total_trilliums, data = trillium, family = "binomial")
 summary(mm2)
-
-
-
 ```
 
-## Figure 3
+### Figure 3
 ```{r}
-
 
 fig3A<-trilliumY %>% 
   group_by(Total_adult_trilliums, Infection_presence, Year) %>% 
@@ -101,7 +98,7 @@ fig3A<-trilliumY %>%
   ylab("Density of sampled plots")+
   scale_fill_manual(name="Infection presence",values=c("grey", "darkgreen"))+
   scale_colour_manual(name="Infection presence",values=c("grey", "darkgreen"))+
-  labs(subtitle = "Year p = 0.038, Trillium density p = 0.010")+ 
+  labs(subtitle = "Year p = 0.038, Trillium density p = 0.010", title="Zero component")+ 
   # stats from model MM4
   theme(legend.position = "inside",legend.position.inside = c(0.25, 0.8)); fig3A
 
@@ -114,7 +111,7 @@ fig3B<-trilliumY %>%
   theme_cowplot()+
   xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
   ylab("Number of infected trillium")+
-  labs(subtitle = "Year p = 0.706, Trillium density p = 0.069"); fig3B
+  labs(subtitle = "Year p = 0.706, Trillium density p = 0.069", title="Count component"); fig3B
   # stats from model MM4
 
 
@@ -127,7 +124,7 @@ fig3C<-
   theme_cowplot()+
   xlab(expression('Density of all trillium (no./m'^2* ')'))+ 
   ylab("Proportion of all trillium with hemiptera")+
-  labs(subtitle = "p < 0.001"); fig3C
+  labs(subtitle = "Trillium density p < 0.001"); fig3C
 # stats from model mm1
 
 
@@ -140,15 +137,32 @@ fig3D<-
   xlab("Proportion of flowering trillium with hemiptera")+
   ylab("Proportion of flowering trillium infected")+ 
   theme_cowplot()+
-  labs(subtitle = "p < 0.001")+
+  labs(subtitle = "Prop. flowering with hemiptera p < 0.001")+
   ylim(0, NA); fig3D
 # stats from model mm2
 
-plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("A", "B", "C", "D"))  #10 by 10
-ggsave("Fig3.png", height = 10, width = 10)
-ggsave("Fig3.pdf", height = 10, width = 10)
+#plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("A", "B", "C", "D"))  #10 by 10
+#ggsave("Fig3.png", height = 10, width = 10)
+#ggsave("Fig3.pdf", height = 10, width = 10)
 
 ```
+```{r}
+fig3AA<-trilliumY %>% 
+  ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults, color=Year)) +
+  geom_point(alpha=0.5)+
+  theme_cowplot()+
+  xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
+  ylab("Proportion of flowering trillium infected")+
+  scale_colour_manual(name="Year",values=c("#3399FF", "black"))+ theme(legend.position = "inside",legend.position.inside = c(0.75, 0.8))
+
+#Fig3_v1<-plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("B", "C", "D", "E"))
+fig3BC<-plot_grid(fig3A,fig3B,ncol=1, labels=c("B", "C"))
+fig3ABC<-plot_grid(fig3AA,fig3BC, labels=c("A", ""), rel_widths=c(0.5, 1))
+fig3DE<-plot_grid(fig3C, fig3D, labels=c("D", "E"))
+plot_grid(fig3ABC,fig3DE, labels=c("", ""),ncol=1, rel_heights=c(1, 0.5)) #save 13 by 12 portrait
+ggsave("Fig3.pdf", height = 13, width = 12)
+```
+
 Alternate Figure 3D (Figure S3)
 ```{r}
 #testing that logit-transformed proportion data gives qualitatively the same result
@@ -169,16 +183,19 @@ traits %>% group_by(Infection_chr) %>% tally()
 ```
 ```{r}
 #Height
-figheight<-traits %>% ggplot(aes(x=Infection_chr, y=Height_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Height (cm)")+geom_point(alpha=0.2, position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8))+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")
+figheight<-traits %>% ggplot(aes(x=Infection_chr, y=Height_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Height (cm)")+geom_point(alpha=0.2, position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8))+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")+
+  labs(subtitle = expression('X'^2*' = 8.77, p = 0.003'))
 traits %>%  group_by(Infection_chr) %>% summarize(mean=mean(Height_cm))
 1-(23.34688/27.61000	)
 27.61-23.34688
 
 #leaf length
-figleaf<-traits %>% ggplot(aes(x=Infection_chr, y=Leaf_length_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Leaf length (cm)")+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")
+figleaf<-traits %>% ggplot(aes(x=Infection_chr, y=Leaf_length_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Leaf length (cm)")+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")+
+  labs(subtitle = "N.S.")
 
 #sepal length
-figsepal<-traits %>% ggplot(aes(x=Infection_chr, y=Sepal_length_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Sepal length (cm)")+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")
+figsepal<-traits %>% ggplot(aes(x=Infection_chr, y=Sepal_length_cm, colour=Infection_chr))+geom_boxplot()+theme_cowplot()+labs(x = "Infection status",y = "Sepal length (cm)")+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+scale_colour_manual(values=c("black", "darkgreen"))+theme(legend.position="none")+
+  labs(subtitle = expression('X'^2*' = 25.6, p < 0.001'))
 traits %>%  group_by(Infection_chr) %>% summarize(mean=mean(Sepal_length_cm))
 1-(3.460667/4.820938)
 
@@ -209,37 +226,33 @@ seed<-read.csv("2024 Trillium seed counts and predicted counts.csv")
 head(seed)
 seed$seed_count_round<-round(seed$seed_count)
 seed<-seed %>% mutate(Full_treatment=paste(Infection_status, Seed_count_real_or_predicted, sep = '_'))
-
-seed %>% drop_na(seed_count) %>%  ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("goldenrod", "darkgrey"),name="Seed count", labels=c("Predicted from leaf length", "Real"))+theme(legend.position="top")
-
-seed_tril_plot<-seed %>% drop_na(seed_count) %>%filter(Full_treatment!="Nonsymptomatic_Real") %>%   ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted"))+theme(legend.position="top")
-
-seed %>%filter(Paired_data_plants=='Yes'& Seed_count_real_or_predicted=='Real') %>%  drop_na(seed_count)%>% group_by(Infection_status) %>% tally() #only 81 plants had real seed count numbers
-seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% filter(seed_count==0) %>% tally()
-51/81
-seed_comparison1<-seed %>% filter(Paired_data_plants=='Yes'&Infection_status=="Symptomatic")
 seed_comparison2<-seed %>% filter(Full_treatment=="Symptomatic_Real" | Full_treatment== "Nonsymptomatic_Predicted_from_lf_length")
+
+seed_tril_plot<-seed_comparison2 %>%   ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted"))+theme(legend.position="top")+labs(subtitle = "Infection status p < 0.001")
+
+seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% filter(seed_count==0) %>% tally() #how many plants made 0 seeds
+51/81
 hist((seed_comparison2$seed_count))
-summary(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1))
-Anova(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1), type=3) #comparing infected observed vs. expected seed number based on size
 summary(glmer.nb(round(seed_count)~Infection_status+(1|pair_number), data=seed_comparison2, control = glmerControl("bobyqa")))
 (Anova(glmer.nb(round(seed_count)~Infection_status+(1|pair_number), data=seed_comparison2, control = glmerControl("bobyqa")), type=3)) #comparing the focal paired plants, actual infected and predicted seed count of healthy paired plant
 
-#try quasipoisson if overdispersed
 plyr::ddply(seed_comparison2, c("Infection_status"), summarise,
                   N=sum(!is.na(seed_count)),
              mean = mean ((seed_count), na.rm=TRUE),
              sd = sd (seed_count,na.rm=TRUE),
              se = sd/sqrt(N))
-((5.851852		- 18.525928	)/18.525928)*100
-plyr::ddply(seed_comparison1, c("Seed_count_real_or_predicted"), summarise,
-                  N=sum(!is.na(seed_count)),
-             mean = mean ((seed_count), na.rm=TRUE),
-             sd = sd (seed_count,na.rm=TRUE),
-             se = sd/sqrt(N))
-((5.851852		- 16.522099	)/16.522099)*100
+((5.851852	- 18.525928	)/18.525928)*100
+
+#analysis to show seed reduction is not just due to smaller size
+#seed_comparison1<-seed %>% filter(Paired_data_plants=='Yes'&Infection_status=="Symptomatic")
+#summary(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1))
+#Anova(glmer.nb(round(seed_count)~Seed_count_real_or_predicted+(1|pair_number), data=seed_comparison1), type=3) #comparing infected observed vs. expected seed number based on size
+#plyr::ddply(seed_comparison1, c("Seed_count_real_or_predicted"), summarise,N=sum(!is.na(seed_count)), mean = mean ((seed_count), na.rm=TRUE),sd = sd (seed_count,na.rm=TRUE),se = sd/sqrt(N))
+#((5.851852	- 16.522099	)/16.522099)*100
 ```
 
+##Age classes and recruitment
+2024 stage class
 ```{r}
 all_data <-read.csv('Trillium_data_collection - 2024 demography.csv')
 
@@ -269,33 +282,53 @@ all_data$Ratio_one_to_repro[is.infinite(all_data$Ratio_one_to_repro)] <- NA
 all_data$Ratio_veg_to_repro[is.infinite(all_data$Ratio_veg_to_repro)] <- NA
 
 cor.test(all_data$Freq_infected_adult, all_data$Ratio_one_to_repro)
-library(bestNormalize)
+cor.test(all_data$adult_count, all_data$Ratio_one_to_repro)
 hist((all_data$Ratio_one_to_repro))
-hist(predict(bestNormalize(all_data$Ratio_one_to_repro)))
-demography2024_one<-ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_repro))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("One-leaved:flowering ratio")+xlab("Proportion of flowering trillium infected")+labs(subtitle = "r = -0.082, p = 0.336")
+demography2024_one<-ggplot(data=all_data, aes(Freq_infected_adult, log1p(Ratio_one_to_repro)))+geom_point(alpha=0.5)+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("log(One-leaved:flowering ratio + 1)")+xlab("Proportion of flowering trillium infected")+labs(subtitle = 'Proportion infected p = 0.035')
+summary(lm(log1p(Ratio_one_to_repro) ~ Freq_infected_adult * adult_count, data=all_data))
+car::Anova(lm(log1p(Ratio_one_to_repro) ~ Freq_infected_adult * adult_count, data=all_data), type=3)
 
+hist(all_data$Ratio_veg_to_repro)
 cor.test(all_data$Freq_infected_adult, all_data$Ratio_veg_to_repro)
-demography_2024_veg<-all_data %>% ggplot(aes(Freq_infected_adult, Ratio_veg_to_repro))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("Three-leaved non-flowering:flowering ratio")+xlab("Proportion of flowering trillium infected")+ggtitle("2024")+labs(subtitle = "r = -0.079, p = 0.352")
-
-cor.test(all_data$Freq_infected_adult, all_data$Ratio_one_to_three)
-ggplot(data=all_data, aes(Freq_infected_adult, Ratio_one_to_three))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("One-leaved:Three-leaved ratio")+xlab("Proportion of flowering trillium infected")+labs(subtitle = "r = -0.023, p = 0.784")
+cor.test(all_data$adult_count, all_data$Ratio_veg_to_repro)
+demography_2024_veg<-all_data %>% ggplot(aes(Freq_infected_adult, Ratio_veg_to_repro))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("Three-leaved non-flowering:flowering ratio")+xlab("Proportion of flowering trillium infected")+ggtitle("2024")+labs(subtitle = "")
+summary(lm(log1p(Ratio_veg_to_repro) ~ Freq_infected_adult * adult_count, data=all_data))
+car::Anova(lm(log1p(Ratio_veg_to_repro) ~ Freq_infected_adult * adult_count, data=all_data), type=3)
 ```
-
-## Figure 2
+2023 stage class
 ```{r}
 #Association between adult infection frequencies and the ratio of young plants to adults
 
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
 plot(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
-mm3 = lm(log(Young_to_repro_ratio) ~ Freq_infection_of_adults, data = trillium)
-summary(mm3)
+hist((trillium$Young_to_repro_ratio))
+hist(log(trillium$Young_to_repro_ratio))
+
+summary(lm(log(Young_to_repro_ratio) ~ Freq_infection_of_adults * Total_adult_trilliums, data=trillium))
+car::Anova(lm(log(Young_to_repro_ratio) ~ Freq_infection_of_adults * Total_adult_trilliums, data=trillium),type=3)
 
 #making the demography data plot from 2023
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio)
+cor.test(trillium$Total_adult_trilliums, trillium$Young_to_repro_ratio)
 demography2023<-trillium %>% 
-  ggplot(aes(x=Freq_infection_of_adults, y=Young_to_repro_ratio))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("Three-leaved non-flowering:flowering ratio")+labs(subtitle = "r = 0.103, p = 0.412")+ggtitle("2023")
+  ggplot(aes(x=Freq_infection_of_adults, y=log(Young_to_repro_ratio)))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("Three-leaved non-flowering:flowering ratio")+labs(subtitle = "Proportion infected N.S., Flowering trillium density N.S.")+ggtitle("2023")
 demography2023
 ```
+###Poisson models for count data
+```{r}
+#2023 data
+summary(glm((Total_trilliums-Total_adult_trilliums) ~ Freq_infection_of_adults * Total_adult_trilliums, family = poisson, data=trillium))
+car::Anova(glm((Total_trilliums-Total_adult_trilliums) ~ Freq_infection_of_adults * Total_adult_trilliums, family = poisson, data=trillium), type=3) #sig adult trillium
+
+#2024 data
+summary(glm(one_leaf_count ~ Freq_infected_adult * adult_count, family=poisson, data=all_data))
+car::Anova(glm(one_leaf_count ~ Freq_infected_adult * adult_count, family=poisson, data=all_data), type=3) #sig interaction
+
+summary(glm(juvenile_count ~ Freq_infected_adult * adult_count, family=poisson, data=all_data))
+car::Anova(glm(juvenile_count ~ Freq_infected_adult * adult_count, family=poisson, data=all_data), type=3) #sig everything
+```
+
+###Figure 2
 ```{r}
 #plot_grid(seed_tril_plot, demography2023, labels=c("A", "B")) #5 by 8 landscape for ellie's version
 #5 by 10 for the above version
@@ -307,7 +340,6 @@ plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B")) #5 by 10.5
 
 # iNaturalist data
 ```{r}
-#install.packages('geodata')
 library(maps)
 library(mapdata)
 library(ggmap)
@@ -345,7 +377,7 @@ Inat_m<-merge(inat, gbif_select, by.x="url", by.y="occurrenceID") #36497 observa
 
 ```{r}
 #inat<-read.csv("iNat_alltrilliums_2025_03_14_539340.csv") #version with 2024 data
-head(inat)
+head(Inat_m)
 
 set.seed(2025)
 inat_cleaned = Inat_m %>% 
@@ -684,7 +716,8 @@ tril_c
 plot_grid(tril_a, tril_b, tril_c, tril_d, labels="AUTO") #12 by 10 landscape
 ```
 
-#### Supplemental figure: Spatial field standard deviation
+#### Supplemental INLA related: 
+Spatial field standard deviation
 ```{r}
 #I modified the code from the package to get a version that gives me sd instead of mean. The function is on github as ggField_sd.R
 spatial_field_sd<-ggField_sd(IM3.r, Mesh, Groups = 1) +
@@ -705,3 +738,113 @@ spatial_field_sd<-ggField_sd(IM3.r, Mesh, Groups = 1) +
 
 plot_grid(tril_c, spatial_field_sd, labels="AUTO") #save 3 by 10 landscape
 ```
+
+How does human footprint and observation density correlate?
+```{r}
+set.seed(1)
+inat_grid_sliced<-inat_full_complete %>% group_by(grid_id) %>% 
+  slice_sample(n = 1, replace = FALSE) #making it so that there is only 1 representative bioclim data for a grid, so that sample size isn't artificially increased
+cor.test(inat_grid_sliced$footprint, inat_grid_sliced$n) #r= 0.1822026 
+```
+
+How do our predictor variables correlate with the responses?
+```{r}
+Finalcovar
+#"n","wc2.1_30s_bio_2","wc2.1_30s_bio_4","wc2.1_30s_bio_8","wc2.1_30s_bio_9" , "wc2.1_30s_bio_10" , "wc2.1_30s_bio_15" , "wc2.1_30s_bio_16" ,  "cropland","footprint"
+
+set.seed(1)
+inat_grid_sliced<-inat_full_complete %>% group_by(grid_id) %>% 
+  slice_sample(n = 1, replace = FALSE)  #making it so that there is only 1 representative bioclim data for a grid, so that sample size isn't artificially increased
+
+#Trillium observation number:
+obs_1<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_2, y=n))+geom_point(alpha=0.2)+xlab("Mean diurnal range")+ylab("Observations (no.)")+theme_cowplot()
+obs_2<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_4, y=n))+geom_point(alpha=0.2)+xlab("Temp. seasonality")+ylab("Observations (no.)")+theme_cowplot()
+obs_3<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_8, y=n))+geom_point(alpha=0.2)+xlab("Mean temp. of wettest quart.")+ylab("Observations (no.)")+theme_cowplot()
+obs_4<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_9, y=n))+geom_point(alpha=0.2)+xlab("Mean temp. of driest quart.")+ylab("Observations (no.)")+theme_cowplot()
+obs_5<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_10, y=n))+geom_point(alpha=0.2)+xlab("Mean temp of warmest quart.")+ylab("Observations (no.)") +theme_cowplot()
+obs_6<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_15, y=n))+geom_point(alpha=0.2)+xlab("Precip. Seasonality")+ylab("Observations (no.)")+theme_cowplot()
+obs_7<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_16, y=n))+geom_point(alpha=0.2)+xlab("Precip. of Wettest Quarter")+ylab("Observations (no.)")+theme_cowplot()
+obs_8<-inat_grid_sliced %>% ggplot(aes(x=cropland, y=n))+geom_point(alpha=0.2)+xlab("Cropland")+ylab("Observations (no.)")+theme_cowplot()
+obs_9<-inat_grid_sliced %>% ggplot(aes(x=footprint, y=n))+geom_point(alpha=0.2)+xlab("Footprint")+ylab("Observations (no.)")+theme_cowplot()
+plot_grid(obs_1, obs_2, obs_3, obs_4, obs_5, obs_6, obs_7, obs_8, obs_9, labels="AUTO") #save 12 by 12
+
+#Trillium infection frequency:
+inf_1<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_2, y=freq_infected))+geom_point(alpha=0.2)+xlab("Mean diurnal range")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_2<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_4, y=freq_infected))+geom_point(alpha=0.2)+xlab("Temp. seasonality")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_3<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_8, y=freq_infected))+geom_point(alpha=0.2)+xlab("Mean temp. of wettest quart.")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_4<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_9, y=freq_infected))+geom_point(alpha=0.2)+xlab("Mean temp. of driest quart.")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_5<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_10, y=freq_infected))+geom_point(alpha=0.2)+xlab("Mean temp of warmest quart.")+ylab("Proportion symptomatic") +theme_cowplot()
+inf_6<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_15, y=freq_infected))+geom_point(alpha=0.2)+xlab("Precip. Seasonality")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_7<-inat_grid_sliced %>% ggplot(aes(x=wc2.1_30s_bio_16, y=freq_infected))+geom_point(alpha=0.2)+xlab("Precip. of Wettest Quarter")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_8<-inat_grid_sliced %>% ggplot(aes(x=cropland, y=freq_infected))+geom_point(alpha=0.2)+xlab("Cropland")+ylab("Proportion symptomatic")+theme_cowplot()
+inf_9<-inat_grid_sliced %>% ggplot(aes(x=footprint, y=freq_infected))+geom_point(alpha=0.2)+xlab("Footprint")+ylab("Proportion symptomatic")+theme_cowplot()
+plot_grid(inf_1, inf_2, inf_3, inf_4, inf_5, inf_6, inf_7, inf_8, inf_9, labels="AUTO") # 12 by 12
+
+#density??
+inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_2,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_2), fill = as.factor(infected), colour = as.factor(infected), group=infected)) + geom_density(alpha = 0.1)+
+  theme_cowplot()+
+  xlab(expression('Mean diurnal range'))+
+  ylab("Density of sampled plots")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))
+
+#histograms??
+ hist1<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_2,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_2), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Mean diurnal range'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist2<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_4,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_4), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Temp. seasonality'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist3<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_8,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_8), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Mean temp. of wettest quart.'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.10, 0.8))
+ hist4<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_9,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_9), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Mean temp. of driest quart.'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist5<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_10,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_10), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Mean temp of warmest quart.'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.10, 0.8))
+ hist6<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_15,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_15), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Precip. Seasonality'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist7<-inat_full_complete %>% 
+  group_by(wc2.1_30s_bio_16,infected) %>% 
+  ggplot(aes(x=as.numeric(wc2.1_30s_bio_16), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Precip. of Wettest Quarter'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist8<-inat_full_complete %>% 
+  group_by(cropland,infected) %>% 
+  ggplot(aes(x=as.numeric(cropland), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Cropland'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+ hist9<-inat_full_complete %>% 
+  group_by(footprint,infected) %>% 
+  ggplot(aes(x=as.numeric(footprint), fill = as.factor(infected), colour = as.factor(infected), group=infected)) +geom_histogram(position="identity", alpha=0.5)+
+  theme_cowplot()+xlab(expression('Footprint'))+ylab("Observations (no.)")+
+  scale_fill_manual(name="Infected",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Infected",values=c("grey", "darkgreen"))+theme(legend.position = "inside",legend.position.inside = c(0.8, 0.8))
+plot_grid(hist1, hist2, hist3, hist4, hist5, hist6, hist7, hist8, hist9, labels="AUTO") #save 12 by 12
+```
+
