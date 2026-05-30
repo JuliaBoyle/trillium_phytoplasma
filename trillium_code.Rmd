@@ -18,10 +18,10 @@ library(pscl)
 library(lmerTest)
 library(ggeffects)
 
-trillium<-read.csv("Trillium_Field_Data_Frequency.csv") %>% #just 2023
+trillium<-read.csv("Field_data/Trillium_Field_Data_Frequency.csv") %>% #just 2023
   mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
 
-trilliumY<-read.csv("Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
+trilliumY<-read.csv("Field_data/Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
  mutate(Year = as.factor(Year),
         Infection_presence=ifelse(Freq_infection_of_adults>0,"Yes","No"))
 
@@ -176,7 +176,7 @@ trillium %>%
 
 ## Trait data
 ```{r}
-traits<-read.csv("Trillium_Field_Data - Leaf and Height Phenotypes.csv")
+traits<-read.csv("Field_data/Trillium_Field_Data - Leaf and Height Phenotypes.csv")
 str(traits)
 traits<-traits %>% mutate(Infection_chr=ifelse(Infection=="0", "Asymptomatic", "Symptomatic"))
 traits %>% group_by(Infection_chr) %>% tally()
@@ -222,13 +222,49 @@ Anova(lmer(log(Sepal_length_cm)~Infection_chr+(1|Population), data=traits), type
 ## Seed counts 2024
 ```{r}
 #actual seed counts only
-seed<-read.csv("2024 Trillium seed counts and predicted counts.csv")
+seed <- read.csv("Field_data/2024 Trillium seed counts and predicted counts.csv") %>% 
+  mutate(sample_type = case_when(
+    Infection_status == "Symptomatic" & Seed_count_real_or_predicted == "Real" ~ "paired\nsymptomatic",
+    Infection_status == "Nonsymptomatic" & Seed_count_real_or_predicted == "Predicted_from_lf_length" ~ "paired\nasymptomatic",
+    Infection_status == "Nonsymptomatic" & Seed_count_real_or_predicted == "Real" ~ "unpaired\nasymptomatic",
+  )) %>% 
+  filter(!is.na(sample_type), !is.na(seed_count))
+# drop rows with predicted counts for symptomatic plants
+
+unpaired = seed %>% filter(sample_type == "unpaired\nasymptomatic")
+paired = seed %>% filter(sample_type != "unpaired\nasymptomatic")
+
+u_plot = unpaired %>% 
+  ggplot(aes(x = sample_type, y = seed_count, colour = Seed_count_real_or_predicted)) +
+  geom_boxplot()+
+  geom_point(position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2) +
+  theme_cowplot()+ylab("Seed count") +
+  xlab("Sample type") +
+  # scale_x_discrete(labels=c("Asymptomatic", "Symptomatic")) +
+  scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted")) +
+  theme(legend.position="none") +
+  scale_y_continuous(limits = c(0, 80)); u_plot
+
+p_plot = paired %>% 
+  ggplot(aes(x = sample_type, y = seed_count, colour = Seed_count_real_or_predicted)) +
+  geom_boxplot()+
+  geom_point(position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2) +
+  theme_cowplot()+
+  ylab(NULL) +
+  xlab("Sample type") +
+  # scale_x_discrete(labels=c("Asymptomatic", "Symptomatic")) +
+  scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted")) +
+  theme(legend.position="top") +
+  scale_y_continuous(limits = c(0, 80)) +
+  labs(subtitle = "Symptomatic status p < 0.001"); p_plot
+
+seed_tril_plot = plot_grid(u_plot, p_plot, rel_widths = c(1.2, 2), align = "h", axis = "lrbt"); seed_tril_plot
+
+
 head(seed)
 seed$seed_count_round<-round(seed$seed_count)
 seed<-seed %>% mutate(Full_treatment=paste(Infection_status, Seed_count_real_or_predicted, sep = '_'))
 seed_comparison2<-seed %>% filter(Full_treatment=="Symptomatic_Real" | Full_treatment== "Nonsymptomatic_Predicted_from_lf_length")
-
-seed_tril_plot<-seed_comparison2 %>%   ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot()+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted"))+theme(legend.position="top")+labs(subtitle = "Infection status p < 0.001")
 
 seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% filter(seed_count==0) %>% tally() #how many plants made 0 seeds
 51/81
@@ -254,7 +290,7 @@ plyr::ddply(seed_comparison2, c("Infection_status"), summarise,
 ##Age classes and recruitment
 2024 stage class
 ```{r}
-all_data <-read.csv('Trillium_data_collection - 2024 demography.csv')
+all_data <-read.csv('Field_data/Trillium_data_collection - 2024 demography.csv')
 
 all_data <- all_data %>%
   filter(!is.na(Date))
@@ -334,7 +370,8 @@ car::Anova(glm(juvenile_count ~ Freq_infected_adult * adult_count, family=poisso
 #5 by 10 for the above version
 
 plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B")) #5 by 10.5
-
+ggsave("Figures/Fig2_update.png", height = 5, width = 12)
+ggsave("Figures/Fig2_update.pdf", height = 5, width = 12)
 #plot_grid(seed_tril_plot, demography2023, demography2024_one, demography_2024_veg, labels="AUTO") #8 by 10
 ```
 
