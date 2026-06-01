@@ -366,10 +366,7 @@ car::Anova(glm(juvenile_count ~ Freq_infected_adult * adult_count, family=poisso
 
 ###Figure 2
 ```{r}
-#plot_grid(seed_tril_plot, demography2023, labels=c("A", "B")) #5 by 8 landscape for ellie's version
-#5 by 10 for the above version
-
-plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B")) #5 by 10.5
+plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B"), rel_widths=c(1.5,1)) #5 by 10.5
 ggsave("Figures/Fig2_update.png", height = 5, width = 12)
 ggsave("Figures/Fig2_update.pdf", height = 5, width = 12)
 #plot_grid(seed_tril_plot, demography2023, demography2024_one, demography_2024_veg, labels="AUTO") #8 by 10
