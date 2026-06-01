@@ -18,10 +18,10 @@ library(pscl)
 library(lmerTest)
 library(ggeffects)
 
-trillium<-read.csv("Field_data/Trillium_Field_Data_Frequency.csv") %>% #just 2023
+trillium<-read.csv("Trillium_Field_Data_Frequency.csv") %>% #just 2023
   mutate(Total_hemiptera_trillium=Young_hemiptera+Health_hemiptera+Infec_hemiptera)
 
-trilliumY<-read.csv("Field_data/Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
+trilliumY<-read.csv("Trillium_Field_Data - Multiyear.csv") %>% #includes 2018 and 2023
  mutate(Year = as.factor(Year),
         Infection_presence=ifelse(Freq_infection_of_adults>0,"Yes","No"))
 
@@ -96,8 +96,8 @@ fig3A<-trilliumY %>%
   theme_cowplot()+
   xlab(expression('Density of flowering trillium (no./m'^2* ')'))+
   ylab("Density of sampled plots")+
-  scale_fill_manual(name="Infection presence",values=c("grey", "darkgreen"))+
-  scale_colour_manual(name="Infection presence",values=c("grey", "darkgreen"))+
+  scale_fill_manual(name="Symptom presence",values=c("grey", "darkgreen"))+
+  scale_colour_manual(name="Symptom presence",values=c("grey", "darkgreen"))+
   labs(subtitle = "Year p = 0.038, Trillium density p = 0.010", title="Zero component")+ 
   # stats from model MM4
   theme(legend.position = "inside",legend.position.inside = c(0.25, 0.8)); fig3A
@@ -110,7 +110,7 @@ fig3B<-trilliumY %>%
   facet_grid(~Year)+
   theme_cowplot()+
   xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
-  ylab("Number of infected trillium")+
+  ylab("Number of symptomatic trillium")+
   labs(subtitle = "Year p = 0.706, Trillium density p = 0.069", title="Count component"); fig3B
   # stats from model MM4
 
@@ -135,7 +135,7 @@ fig3D<-
   geom_line(data = p2, aes(x = x, y = predicted), color="darkgreen") +
   geom_ribbon(data = p2, aes(x = x, ymin = conf.low, ymax = conf.high), fill="darkgreen", alpha = 0.2) +
   xlab("Proportion of flowering trillium with hemiptera")+
-  ylab("Proportion of flowering trillium infected")+ 
+  ylab("Proportion of flowering trillium symptomatic")+ 
   theme_cowplot()+
   labs(subtitle = "Prop. flowering with hemiptera p < 0.001")+
   ylim(0, NA); fig3D
@@ -152,7 +152,7 @@ fig3AA<-trilliumY %>%
   geom_point(alpha=0.5)+
   theme_cowplot()+
   xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
-  ylab("Proportion of flowering trillium infected")+
+  ylab("Proportion of flowering trillium symptomatic")+
   scale_colour_manual(name="Year",values=c("#3399FF", "black"))+ theme(legend.position = "inside",legend.position.inside = c(0.75, 0.8))
 
 #Fig3_v1<-plot_grid(fig3A,fig3B,fig3C, fig3D, labels=c("B", "C", "D", "E"))
@@ -160,7 +160,7 @@ fig3BC<-plot_grid(fig3A,fig3B,ncol=1, labels=c("B", "C"))
 fig3ABC<-plot_grid(fig3AA,fig3BC, labels=c("A", ""), rel_widths=c(0.5, 1))
 fig3DE<-plot_grid(fig3C, fig3D, labels=c("D", "E"))
 plot_grid(fig3ABC,fig3DE, labels=c("", ""),ncol=1, rel_heights=c(1, 0.5)) #save 13 by 12 portrait
-ggsave("Fig3.pdf", height = 13, width = 12)
+ggsave("Fig3.pdf", height = 13.5, width = 12)
 ```
 
 Alternate Figure 3D (Figure S3)
@@ -176,7 +176,7 @@ trillium %>%
 
 ## Trait data
 ```{r}
-traits<-read.csv("Field_data/Trillium_Field_Data - Leaf and Height Phenotypes.csv")
+traits<-read.csv("Trillium_Field_Data - Leaf and Height Phenotypes.csv")
 str(traits)
 traits<-traits %>% mutate(Infection_chr=ifelse(Infection=="0", "Asymptomatic", "Symptomatic"))
 traits %>% group_by(Infection_chr) %>% tally()
@@ -222,7 +222,9 @@ Anova(lmer(log(Sepal_length_cm)~Infection_chr+(1|Population), data=traits), type
 ## Seed counts 2024
 ```{r}
 #actual seed counts only
-seed <- read.csv("Field_data/2024 Trillium seed counts and predicted counts.csv") %>% 
+#seed<-read.csv("2024 Trillium seed counts and predicted counts.csv")
+#actual seed counts only
+seed <- read.csv("2024 Trillium seed counts and predicted counts.csv") %>% 
   mutate(sample_type = case_when(
     Infection_status == "Symptomatic" & Seed_count_real_or_predicted == "Real" ~ "paired\nsymptomatic",
     Infection_status == "Nonsymptomatic" & Seed_count_real_or_predicted == "Predicted_from_lf_length" ~ "paired\nasymptomatic",
@@ -235,13 +237,12 @@ unpaired = seed %>% filter(sample_type == "unpaired\nasymptomatic")
 paired = seed %>% filter(sample_type != "unpaired\nasymptomatic")
 
 u_plot = unpaired %>% 
-  ggplot(aes(x = sample_type, y = seed_count, colour = Seed_count_real_or_predicted)) +
+  ggplot(aes(x = sample_type, y = seed_count)) +
   geom_boxplot(outlier.shape = NA)+
   geom_point(position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2) +
   theme_cowplot()+ylab("Seed count") +
   xlab("Sample type") +
   # scale_x_discrete(labels=c("Asymptomatic", "Symptomatic")) +
-  scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted")) +
   theme(legend.position="none") +
   scale_y_continuous(limits = c(0, 80)); u_plot
 
@@ -253,18 +254,18 @@ p_plot = paired %>%
   ylab(NULL) +
   xlab("Sample type") +
   # scale_x_discrete(labels=c("Asymptomatic", "Symptomatic")) +
-  scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted")) +
-  theme(legend.position="top") +
+  scale_colour_manual(values=c( "darkgreen", "black"),name="Seed count", labels=c("Modeled", "Counted")) + theme(legend.position="top") +
   scale_y_continuous(limits = c(0, 80)) +
   labs(subtitle = "Symptomatic status p < 0.001"); p_plot
 
 seed_tril_plot = plot_grid(u_plot, p_plot, rel_widths = c(1.2, 2), align = "h", axis = "lrbt"); seed_tril_plot
 
-
-head(seed)
+#head(seed)
 seed$seed_count_round<-round(seed$seed_count)
 seed<-seed %>% mutate(Full_treatment=paste(Infection_status, Seed_count_real_or_predicted, sep = '_'))
 seed_comparison2<-seed %>% filter(Full_treatment=="Symptomatic_Real" | Full_treatment== "Nonsymptomatic_Predicted_from_lf_length")
+
+#seed_tril_plot<-seed_comparison2 %>%   ggplot(aes(x=Infection_status, y=seed_count, colour=Seed_count_real_or_predicted))+geom_boxplot(outlier.shape = NA)+geom_point( position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2)+theme_cowplot()+ylab("Seed count")+xlab("Infection status")+scale_x_discrete(labels=c("Asymptomatic", "Symptomatic"))+scale_colour_manual(values=c("black", "darkgreen"),name="Seed count", labels=c("Modeled", "Counted"))+theme(legend.position="top")+labs(subtitle = "Infection status p < 0.001")
 
 seed %>%filter(Paired_data_plants=='Yes') %>% group_by(Infection_status) %>% filter(seed_count==0) %>% tally() #how many plants made 0 seeds
 51/81
@@ -290,7 +291,7 @@ plyr::ddply(seed_comparison2, c("Infection_status"), summarise,
 ##Age classes and recruitment
 2024 stage class
 ```{r}
-all_data <-read.csv('Field_data/Trillium_data_collection - 2024 demography.csv')
+all_data <-read.csv('Trillium_data_collection - 2024 demography.csv')
 
 all_data <- all_data %>%
   filter(!is.na(Date))
@@ -320,7 +321,7 @@ all_data$Ratio_veg_to_repro[is.infinite(all_data$Ratio_veg_to_repro)] <- NA
 cor.test(all_data$Freq_infected_adult, all_data$Ratio_one_to_repro)
 cor.test(all_data$adult_count, all_data$Ratio_one_to_repro)
 hist((all_data$Ratio_one_to_repro))
-demography2024_one<-ggplot(data=all_data, aes(Freq_infected_adult, log1p(Ratio_one_to_repro)))+geom_point(alpha=0.5)+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("log(One-leaved:flowering ratio + 1)")+xlab("Proportion of flowering trillium infected")+labs(subtitle = 'Proportion infected p = 0.035')
+demography2024_one<-ggplot(data=all_data, aes(Freq_infected_adult, log1p(Ratio_one_to_repro)))+geom_point(alpha=0.5)+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+ylab("log(One-leaved:flowering ratio + 1)")+xlab("Proportion of flowering trillium symptomatic")+labs(subtitle = 'Proportion symptomatic p = 0.035')
 summary(lm(log1p(Ratio_one_to_repro) ~ Freq_infected_adult * adult_count, data=all_data))
 car::Anova(lm(log1p(Ratio_one_to_repro) ~ Freq_infected_adult * adult_count, data=all_data), type=3)
 
@@ -366,9 +367,8 @@ car::Anova(glm(juvenile_count ~ Freq_infected_adult * adult_count, family=poisso
 
 ###Figure 2
 ```{r}
-plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B"), rel_widths=c(1.5,1)) #5 by 10.5
-ggsave("Figures/Fig2_update.png", height = 5, width = 12)
-ggsave("Figures/Fig2_update.pdf", height = 5, width = 12)
+plot_grid(seed_tril_plot, demography2024_one, labels=c("A", "B"), rel_widths=c(1.5,1)) #5 by 11
+
 #plot_grid(seed_tril_plot, demography2023, demography2024_one, demography_2024_veg, labels="AUTO") #8 by 10
 ```
 
@@ -535,7 +535,7 @@ tril_b<-ggplot() +
   geom_sf(data = world, fill = "white") +
   geom_sf(data = lakes, color = "grey", fill = "grey") +
   geom_sf(data = freqs_with_polys, aes(fill = freq_infected), alpha = 0.8, color = "lightgrey") +
-  scale_fill_gradientn(colours = c("white","#00CC66","black"),values = c(0,0.000001,0.5,1), name="Proportion \ninfected") +
+  scale_fill_gradientn(colours = c("white","#00CC66","black"),values = c(0,0.000001,0.5,1), name="Proportion \nsymptomatic") +
   coord_sf(xlim = c(-102.15, -68), ylim = c(30, 55), expand = FALSE) +
   theme_bw()+ theme(legend.position = c(0.15, 0.23))+xlab("Longitude")+ylab("Latitude")
 
