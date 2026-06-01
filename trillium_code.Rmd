@@ -236,7 +236,7 @@ paired = seed %>% filter(sample_type != "unpaired\nasymptomatic")
 
 u_plot = unpaired %>% 
   ggplot(aes(x = sample_type, y = seed_count, colour = Seed_count_real_or_predicted)) +
-  geom_boxplot()+
+  geom_boxplot(outlier.shape = NA)+
   geom_point(position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2) +
   theme_cowplot()+ylab("Seed count") +
   xlab("Sample type") +
@@ -247,7 +247,7 @@ u_plot = unpaired %>%
 
 p_plot = paired %>% 
   ggplot(aes(x = sample_type, y = seed_count, colour = Seed_count_real_or_predicted)) +
-  geom_boxplot()+
+  geom_boxplot(outlier.shape = NA)+
   geom_point(position=position_jitterdodge(jitter.width=0.25, dodge.width=0.8), alpha=0.2) +
   theme_cowplot()+
   ylab(NULL) +
