@@ -108,7 +108,7 @@ fig3B<-trilliumY %>%
   ggplot(aes((Total_adult_trilliums), y=Total_infec_trilliums)) +
   geom_point(alpha=0.5)+
   facet_grid(~Year)+
-  theme_cowplot()+
+  theme_cowplot()+geom_smooth(method='lm', linetype = "dashed", color="darkgreen", fill="darkgreen", alpha = 0.2)+
   xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
   ylab("Number of symptomatic trillium")+
   labs(subtitle = "Year p = 0.706, Trillium density p = 0.069", title="Count component"); fig3B
@@ -147,7 +147,18 @@ fig3D<-
 
 ```
 ```{r}
-fig3AA<-trilliumY %>% 
+fig3AA<-plyr::ddply(trilliumY, c("Total_adult_trilliums", "Year", "Freq_infection_of_adults"), summarise,
+                  N=sum(!is.na(Freq_infection_of_adults)),
+             mean = mean ((Freq_infection_of_adults), na.rm=TRUE),
+             sd = sd ((Freq_infection_of_adults),na.rm=TRUE),
+             se = sd/sqrt(N)) %>% 
+  ggplot(aes(x=Total_adult_trilliums, y=mean, color=Year)) +geom_point(alpha=0.5, aes(size = N))+
+  theme_cowplot()+
+  xlab(expression('Density of flowering trillium (no./1 m'^2* ')'))+
+  ylab("Proportion of flowering trillium symptomatic")+
+  scale_colour_manual(name="Year",values=c("#3399FF", "black"))+ theme(legend.position = "inside",legend.position.inside = c(0.75, 0.8))+ labs(size = "Plot N")
+
+oldfig3AA<-trilliumY %>% 
   ggplot(aes(x=Total_adult_trilliums, y=Freq_infection_of_adults, color=Year)) +
   geom_point(alpha=0.5)+
   theme_cowplot()+
@@ -335,7 +346,6 @@ car::Anova(lm(log1p(Ratio_veg_to_repro) ~ Freq_infected_adult * adult_count, dat
 2023 stage class
 ```{r}
 #Association between adult infection frequencies and the ratio of young plants to adults
-
 cor.test(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
 plot(trillium$Freq_infection_of_adults, trillium$Young_to_repro_ratio) #0.1034085
 hist((trillium$Young_to_repro_ratio))
@@ -351,6 +361,20 @@ demography2023<-trillium %>%
   ggplot(aes(x=Freq_infection_of_adults, y=log(Young_to_repro_ratio)))+geom_point()+geom_smooth(method="lm", color="darkgreen")+theme_cowplot()+xlab("Proportion of flowering trillium infected")+ylab("Three-leaved non-flowering:flowering ratio")+labs(subtitle = "Proportion infected N.S., Flowering trillium density N.S.")+ggtitle("2023")
 demography2023
 ```
+
+###checking how density affects ratios of vegetative and reproductive trillium
+```{r}
+#checking against flowering trillium
+all_data %>% ggplot(aes(adult_count, Ratio_veg_to_repro))+geom_point()+geom_smooth(method="lm")+theme_cowplot()
+trillium %>% 
+  ggplot(aes(x=Total_adult_trilliums, y=log(Young_to_repro_ratio)))+geom_point()+geom_smooth(method="lm")+theme_cowplot()+xlab("Flowering trillium density")
+
+#checking against all trillium
+all_data %>% ggplot(aes(Total_trilliums, Ratio_veg_to_repro))+geom_point()+geom_smooth(method="lm")+theme_cowplot()
+trillium %>% 
+  ggplot(aes(x=Total_trilliums, y=log(Young_to_repro_ratio)))+geom_point()+geom_smooth(method="lm")+theme_cowplot()+xlab("Total trillium density")
+```
+
 ###Poisson models for count data
 ```{r}
 #2023 data
@@ -394,6 +418,8 @@ library(predicts)
 library(tidyverse)
 library(cowplot)
 library(dplyr)
+#remotes::install_github("ropensci/rnaturalearthhires")
+library(rnaturalearthhires)
 ```
 
 ## Joining gbif data with inaturalist data
@@ -435,7 +461,7 @@ inat_clean <- clean_coordinates(x = inat_cleaned,
                                     "equal", "zeros","institutions", "duplicates")) #23,218 observations
 inat_clean=inat_clean %>% filter(.summary==TRUE) #only include observations that have no suspect issues
 inat_clean=inat_clean %>% mutate(infected=ifelse(grepl("Yes", infected), "1", "0"))
-inat_clean$infected
+#inat_clean$infected
 
 inat%>% filter( field.phytoplasma.infection.=="Yes") #637
 inat_clean%>% filter( field.phytoplasma.infection.=="Yes") #384 after filtering out stuff with clean_coordinates
@@ -609,6 +635,7 @@ set.seed(2025)
 #install.packages("devtools")
 #if(!require(ggregplot)) devtools::install_github("gfalbery/ggregplot") # Installing Greg's package for plotting functions!
 #install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+#install.packages("INLAspacetime")
 library(INLA); library(ggregplot); library(RColorBrewer)
 library(INLA)
 library(INLAspacetime)
@@ -642,10 +669,33 @@ Finalcovar<- c("n","wc2.1_30s_bio_2","wc2.1_30s_bio_4","wc2.1_30s_bio_8","wc2.1_
 
 #incorporating space
 Locations = cbind(inat_full_complete$longitude, inat_full_complete$latitude) # using the sampling locations
-Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1) #smaller triangles- use smaller triangles for publication
-plot(Mesh)
+
+#Make hull around the outermost points
+pts_sf <- st_as_sf(as.data.frame(Locations), coords = c("V1", "V2"), crs = "ESRI:102003")
+poly_sf <- pts_sf |> 
+  st_union() |> 
+  st_convex_hull()
+plot(poly_sf)
+poly_sf<- st_sf(poly_sf)
+poly_sf<-st_cast(poly_sf, "MULTIPOLYGON")
+
+#make mesh
+mesh.bdry2 <-  as(poly_sf, "Spatial") %>% inla.sp2segment()
+pol =   st_bbox(poly_sf) %>%  st_as_sfc() 
+Mesh<- inla.mesh.2d(boundary = mesh.bdry2,Locations, loc.domain = st_coordinates(pol)[,1:2],n=10,
+                    max.edge = c(1, 5), #can also use max.edge = c(10,500) to similar effect
+                    offset=c(0.5, 1),
+                    cutoff = 0.5)
+plot(Mesh) #this one might be good
 points(Locations, col = "red", pch = 2)
-save(Mesh, file = "trillium_inla_mesh.Rdata") #!!!
+
+###########old mesh code
+#Mesh <- INLA::inla.mesh.2d(Locations, max.edge = c(10, 500), cutoff=1) #smaller triangles- use smaller triangles for publication
+#plot(Mesh)
+#points(Locations, col = "red", pch = 2)
+#save(Mesh, file = "trillium_inla_mesh.Rdata") #!!!
+#########################
+
 # Making the A matrix
 HostsA <- INLA::inla.spde.make.A(Mesh, loc = Locations) # Making A matrix, which essentially translates spatial locations on the mesh into vectors in the model.
 Range_prior<-inat_full_complete[, 28:29]%>% slice(1:n(), 100)%>% dist%>% c%>% max%>% divide_by(2) #take lat long. result was 14.72662
