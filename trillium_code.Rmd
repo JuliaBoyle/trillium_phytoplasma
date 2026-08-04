@@ -184,6 +184,13 @@ trillium %>%
   ggplot(aes(x=Freq_hemiptera_adults, y=Freq_infection_of_adults))+geom_point()+geom_smooth(method="glm", formula = y ~ x, method.args = list(family = "binomial"), color="darkgreen")+xlab("Proportion of flowering trillium with hemiptera")+ylab("Proportion of flowering trillium infected")+theme_cowplot()
 ```
 
+Are number of flowering trillium correlated with number of non-flowering trillium?
+```{r}
+trillium %>% ggplot(aes(x=Total_adult_trilliums, y=(Total_trilliums-Total_adult_trilliums)))+geom_point()+geom_smooth(method='lm')+theme_cowplot()+xlab(expression('Flowering trillium (no./1 m'^2* ')'))+ylab(expression('Non-flowering trillium (no./1 m'^2* ')'))
+
+cor.test(trillium$Total_adult_trilliums, (trillium$Total_trilliums-trillium$Total_adult_trilliums))
+```
+
 
 ## Trait data
 ```{r}
