@@ -586,6 +586,7 @@ trilab<-plot_grid(tril_a, tril_b, labels=c("A", "B"), nrow=1) #5 by 11 landscape
 ##Moran’s I analysis
 https://mgimond.github.io/simple_moransI_example/
 ```{r}
+set.seed(2025)
 library(sf)
 library(spdep)
 library(tmap)
@@ -596,24 +597,17 @@ plot(inc.lag ~ freqs_with_polys$n_infected, pch=16, asp=1)
 M1 <- lm(inc.lag ~ freqs_with_polys$n_infected)
 abline(M1, col="blue")
 coef(M1)[2] #0.3641648
-#this slope is Morans I: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
+#this slope is Morans I coefficient: because this is positive, it means polygons with high frequency of infection are more likely to have neighbouring polygons with high frequency of infection
 #a positive Moran’s I value suggests clustering whereas a negative Moran’s I value suggests dispersion
-inc.lag.freq <- lag.listw(lw, freqs_with_polys$freq_infected)
-plot(inc.lag.freq ~ freqs_with_polys$freq_infected, pch=16, asp=1)
-M1.freq <- lm(inc.lag.freq ~ freqs_with_polys$freq_infected)
-abline(M1.freq, col="blue")
-coef(M1.freq)[2] #0.03981404
 
-moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.3757675, infections are pretty clustered in space
-moran(freqs_with_polys$freq_infected, lw, length(nb), Szero(lw))[1] #0.04007135
-moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3079917
+#moran's I statistics:
+moran(freqs_with_polys$n_infected, lw, length(nb), Szero(lw))[1] #0.3758206, infections are pretty clustered in space
+moran(freqs_with_polys$n, lw, length(nb), Szero(lw))[1] #0.3092511 trillium are clustered across space too
 
+#Hypothesis testing against null using monte carlo method
 MC.ninfec<- moran.mc(freqs_with_polys$n_infected, lw, nsim=999, alternative="greater")
 MC.ninfec
 plot(MC.ninfec)
-MC.freq<- moran.mc(freqs_with_polys$freq_infected, lw, nsim=999, alternative="greater")
-MC.freq
-plot(MC.freq)
 MC.n<- moran.mc(freqs_with_polys$n, lw, nsim=999, alternative="greater")
 MC.n
 plot(MC.n)
